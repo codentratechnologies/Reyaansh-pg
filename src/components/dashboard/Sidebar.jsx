@@ -1,0 +1,84 @@
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Building2, Users, Headphones, LogOut, X } from 'lucide-react';
+
+const Sidebar = ({ isOpen, setIsOpen }) => {
+  const navigate = useNavigate();
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setIsOpen(false)} 
+        />
+      )}
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="sidebar-header">
+        <div className="sidebar-logo-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+            <rect x="2" y="14" width="10" height="24" rx="1" stroke="#1a56db" strokeWidth="2.5"/>
+            <rect x="15" y="6" width="10" height="32" rx="1" stroke="#1a56db" strokeWidth="2.5"/>
+            <rect x="28" y="10" width="10" height="28" rx="1" stroke="#1a56db" strokeWidth="2.5"/>
+            <rect x="5" y="18" width="4" height="4" rx="0.5" fill="#1a56db"/>
+            <rect x="5" y="25" width="4" height="4" rx="0.5" fill="#1a56db"/>
+            <rect x="18" y="10" width="4" height="4" rx="0.5" fill="#1a56db"/>
+            <rect x="18" y="17" width="4" height="4" rx="0.5" fill="#1a56db"/>
+            <rect x="18" y="24" width="4" height="4" rx="0.5" fill="#1a56db"/>
+            <rect x="31" y="14" width="4" height="4" rx="0.5" fill="#1a56db"/>
+            <rect x="31" y="21" width="4" height="4" rx="0.5" fill="#1a56db"/>
+          </svg>
+        </div>
+        <div className="sidebar-brand-text">
+          <h2>Reeyaansh Living PG</h2>
+          <p>Enterprise Admin</p>
+        </div>
+        <button className="sidebar-close-btn" onClick={() => setIsOpen(false)}>
+          <X size={20} color="#64748b" />
+        </button>
+      </div>
+
+      <nav className="sidebar-nav">
+        <ul>
+          <li>
+            <NavLink to="/dashboard" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={() => setIsOpen(false)}>
+              <LayoutDashboard size={20} />
+              <span>Dashboard</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/pg-management" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={() => setIsOpen(false)}>
+              <Building2 size={20} />
+              <span>PG Management</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/member-management" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={() => setIsOpen(false)}>
+              <Users size={20} />
+              <span>Member Management</span>
+            </NavLink>
+          </li>
+        </ul>
+      </nav>
+
+      <div className="sidebar-footer">
+        
+        <div className="user-profile" onClick={() => { navigate('/profile'); setIsOpen(false); }} style={{ cursor: 'pointer' }}>
+          <div className="user-avatar">
+            A
+          </div>
+          <div className="user-info">
+            <span className="user-name">Welcome, Admin</span>
+            <span className="user-role">Administrator</span>
+          </div>
+          <button className="user-logout-btn" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} title="Logout">
+            <LogOut size={16} />
+          </button>
+        </div>
+      </div>
+    </aside>
+    </>
+  );
+};
+
+export default Sidebar;
