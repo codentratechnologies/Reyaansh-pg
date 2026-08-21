@@ -19,20 +19,25 @@ import UploadBankStatementModal from '../../components/common/UploadBankStatemen
 import MemberFiltersModal from '../../components/members/MemberFiltersModal';
 import { useNavigate } from 'react-router-dom';
 import '../../assets/dashboard.css';
+import api from '../../utils/api';
 
-// Mock Data matching the screenshot exactly
-const mockMembers = [
-  { id: 'M01', name: 'Rahul Patel', initials: 'RP', theme: 'blue', mobile: '9876543210', pg: 'Sunshine PG', room: '101', bed: 'A', rent: '6000.00', dueDate: '05-Aug-2024', rentStatus: 'Pending', memberStatus: 'Active' },
-  { id: 'M02', name: 'Amit Sharma', initials: 'AS', theme: 'orange', mobile: '9123456780', pg: 'Green View PG', room: '202', bed: 'B', rent: '7500.00', dueDate: '01-Aug-2024', rentStatus: 'Overdue', memberStatus: 'Active' },
-  { id: 'M03', name: 'Sahil Verma', initials: 'SV', theme: 'green', mobile: '9988776655', pg: 'Sunshine PG', room: '103', bed: 'A', rent: '6000.00', dueDate: '10-Aug-2024', rentStatus: 'Paid', memberStatus: 'Active' },
-  { id: 'M04', name: 'Neha Singh', initials: 'NS', theme: 'purple', mobile: '8877665544', pg: 'Green View PG', room: '201', bed: 'A', rent: '7000.00', dueDate: '15-Aug-2024', rentStatus: 'Pending', memberStatus: 'Active' },
-  { id: 'M05', name: 'Vikas Kumar', initials: 'VK', theme: 'orange', mobile: '7766554433', pg: 'Sunshine PG', room: '102', bed: 'B', rent: '6000.00', dueDate: '28-Jul-2024', rentStatus: 'Overdue', memberStatus: 'Active' },
-  { id: 'M06', name: 'Pooja Mehta', initials: 'PM', theme: 'teal', mobile: '6655443322', pg: 'Green View PG', room: '203', bed: 'A', rent: '7500.00', dueDate: '12-Aug-2024', rentStatus: 'Paid', memberStatus: 'Active' },
-  { id: 'M07', name: 'Rohan Das', initials: 'RD', theme: 'pink', mobile: '5544332211', pg: 'Sunshine PG', room: '104', bed: 'B', rent: '6500.00', dueDate: '25-Jul-2024', rentStatus: 'Overdue', memberStatus: 'Inactive' },
-  { id: 'M08', name: 'Karan Joshi', initials: 'KJ', theme: 'blue', mobile: '4433221100', pg: 'Green View PG', room: '204', bed: 'B', rent: '7000.00', dueDate: '05-Aug-2024', rentStatus: 'Pending', memberStatus: 'Active' },
-  { id: 'M09', name: 'Arpita Roy', initials: 'AR', theme: 'purple', mobile: '3322110099', pg: 'Sunshine PG', room: '105', bed: 'A', rent: '6000.00', dueDate: '18-Aug-2024', rentStatus: 'Paid', memberStatus: 'Inactive' },
-  { id: 'M10', name: 'Medical Kumar', initials: 'MK', theme: 'teal', mobile: '2211009988', pg: 'Green View PG', room: '205', bed: 'A', rent: '7500.00', dueDate: '08-Aug-2024', rentStatus: 'Pending', memberStatus: 'Active' },
-];
+const colors = ['blue', 'green', 'purple', 'orange', 'teal', 'pink'];
+
+const getTheme = (name) => {
+  if (!name) return 'blue';
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
 
 const MemberManagement = () => {
   const navigate = useNavigate();
@@ -42,14 +47,85 @@ const MemberManagement = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
+  const [activeFilters, setActiveFilters] = useState({
+    pg_name: '', rent_status: '', gender: '', member_status: '', city: ''
+  });
+
+  // API State
+  const [membersList, setMembersList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    page_size: 10,
+    total_pages: 1,
+    has_next: false,
+    has_previous: false
+  });
+
+  const fetchMembers = async (page = 1, search = '', filters = activeFilters) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/api/members', {
+        params: {
+          page: page,
+          page_size: pagination.page_size,
+          search: search,
+          ...(filters.pg_name && { pg_name: filters.pg_name }),
+          ...(filters.rent_status && { rent_status: filters.rent_status }),
+          ...(filters.gender && { gender: filters.gender }),
+          ...(filters.member_status && { member_status: filters.member_status }),
+          ...(filters.city && { city: filters.city })
+        }
+      });
+      if (response.data) {
+        setMembersList(response.data.data || []);
+        if (response.data.pagination) {
+          setPagination(response.data.pagination);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching members:", err);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message || err.message || "Unknown error";
+      setError(`Failed to load members. Error: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMembers(1, searchTerm, activeFilters);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, activeFilters]);
+
+  const handlePageChange = (newPage) => {
+    fetchMembers(newPage, searchTerm, activeFilters);
+  };
+
+  const handleApplyFilters = (filters) => {
+    setActiveFilters(filters);
+  };
+
   const handleDeactivateClick = (member) => {
     setSelectedMember(member);
     setIsDeactivateModalOpen(true);
   };
 
-  const confirmDeactivate = () => {
-    console.log('Deactivated member:', selectedMember?.name);
-    setIsDeactivateModalOpen(false);
+  const confirmDeactivate = async () => {
+    if (!selectedMember) return;
+    try {
+      await api.delete('/api/members', { params: { member_id: selectedMember.id || selectedMember.member_id } });
+      fetchMembers(pagination.current_page, searchTerm);
+      setIsDeactivateModalOpen(false);
+    } catch (err) {
+      console.error('Failed to deactivate member:', err);
+      const errorMessage = err.response?.data?.detail || err.message || "Unknown error";
+      setError(`Failed to deactivate member. Error: ${errorMessage}`);
+      setIsDeactivateModalOpen(false);
+    }
   };
 
   const handleUploadSubmit = () => {
@@ -90,10 +166,21 @@ const MemberManagement = () => {
             <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/member-management/add')} title="Add Member">
               <span className="hide-on-mobile">Add Member</span>
             </Button>
-            <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)}>Filters</Button>
-            <Button variant="outline" icon={<RotateCcw size={16} />}>Reset</Button>
+            <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)} style={{ position: 'relative' }}>
+              Filters
+              {Object.values(activeFilters).some(v => v !== '') && (
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#3b82f6', width: '8px', height: '8px', borderRadius: '50%' }}></span>
+              )}
+            </Button>
+            <Button variant="outline" icon={<RotateCcw size={16} />} onClick={() => { setSearchTerm(''); setActiveFilters({pg_name: '', rent_status: '', gender: '', member_status: '', city: ''}); fetchMembers(1, '', {pg_name: '', rent_status: '', gender: '', member_status: '', city: ''}); }}>Reset</Button>
           </div>
         </div>
+
+        {error && (
+          <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '12px 16px', margin: '0 24px 16px 24px', borderRadius: '6px', fontSize: '14px', border: '1px solid #fecaca' }}>
+            {error}
+          </div>
+        )}
 
         {/* Table Container */}
         <div className="table-container list-table-container">
@@ -114,47 +201,64 @@ const MemberManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {mockMembers.map((member) => (
-                <tr key={member.id}>
-                  <td className="font-medium text-slate-900">{member.id}</td>
-                  <td>
-                    <div className="member-cell">
-                      <div className={`avatar-circle avatar-${member.theme}`}>
-                        {member.initials}
-                      </div>
-                      <span className="font-medium text-slate-700">{member.name}</span>
-                    </div>
-                  </td>
-                  <td>{member.mobile}</td>
-                  <td>{member.pg}</td>
-                  <td>{member.room}</td>
-                  <td>{member.bed}</td>
-                  <td>₹ {member.rent}</td>
-                  <td>{member.dueDate}</td>
-                  <td>
-                    <span className={`badge-status-${member.rentStatus.toLowerCase()}`}>
-                      {member.rentStatus}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge-status-${member.memberStatus.toLowerCase()}`}>
-                      {member.memberStatus}
-                    </span>
-                  </td>
-                  <td className="actions-cell">
-                    <TableActions 
-                      customAction={
-                        <button className="action-icon-btn verify-btn" title="Verify Payment">
-                          <IndianRupee size={16} />
-                        </button>
-                      }
-                      onView={() => navigate(`/member-management/view/${member.id}`)}
-                      onEdit={() => navigate(`/member-management/edit/${member.id}`)}
-                      onDelete={() => handleDeactivateClick(member)}
-                    />
-                  </td>
+              {isLoading ? (
+                <tr>
+                  <td colSpan="11" className="text-center py-8" style={{ color: '#64748b' }}>Loading members...</td>
                 </tr>
-              ))}
+              ) : membersList.length === 0 ? (
+                <tr>
+                  <td colSpan="11" className="text-center py-8" style={{ color: '#64748b' }}>No members found.</td>
+                </tr>
+              ) : (
+                membersList.map((member, index) => {
+                  const theme = getTheme(member.name);
+                  const initials = getInitials(member.name);
+                  const rentStatus = member.rent_status || 'Pending';
+                  const memberStatus = member.member_status || 'Active';
+
+                  return (
+                    <tr key={member.id || index}>
+                      <td className="font-medium text-slate-900">{member.id}</td>
+                      <td>
+                        <div className="member-cell">
+                          <div className={`avatar-circle avatar-${theme}`}>
+                            {initials}
+                          </div>
+                          <span className="font-medium text-slate-700">{member.name}</span>
+                        </div>
+                      </td>
+                      <td>{member.mobile}</td>
+                      <td>{member.pg_name}</td>
+                      <td>{member.room_number}</td>
+                      <td>{member.bed_name}</td>
+                      <td>₹ {member.monthly_rent}</td>
+                      <td>{member.due_date}</td>
+                      <td>
+                        <span className={`badge-status-${rentStatus.toLowerCase()}`}>
+                          {rentStatus}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge-status-${memberStatus.toLowerCase().replace(' ', '-')}`}>
+                          {memberStatus}
+                        </span>
+                      </td>
+                      <td className="actions-cell">
+                        <TableActions 
+                          customAction={
+                            <button className="action-icon-btn verify-btn" title="Verify Payment">
+                              <IndianRupee size={16} />
+                            </button>
+                          }
+                          onView={() => navigate(`/member-management/view/${member.id}`)}
+                          onEdit={() => navigate(`/member-management/edit/${member.id}`)}
+                          onDelete={() => handleDeactivateClick(member)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -163,13 +267,33 @@ const MemberManagement = () => {
         <div className="pagination-footer">
           <div className="pagination-controls">
             <div className="page-numbers">
-              <button className="page-btn nav"><ChevronLeft size={16} /></button>
-              <button className="page-btn active">1</button>
-              <button className="page-btn">2</button>
-              <button className="page-btn">3</button>
-              <span className="page-dots">...</span>
-              <button className="page-btn">13</button>
-              <button className="page-btn nav"><ChevronRight size={16} /></button>
+              <button 
+                className="page-btn nav" 
+                disabled={!pagination.has_previous}
+                onClick={() => handlePageChange(pagination.current_page - 1)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              
+              <button className="page-btn active">{pagination.current_page}</button>
+              
+              {pagination.current_page < pagination.total_pages && (
+                <button className="page-btn" onClick={() => handlePageChange(pagination.current_page + 1)}>
+                  {pagination.current_page + 1}
+                </button>
+              )}
+              
+              {pagination.total_pages > pagination.current_page + 1 && (
+                <span className="page-dots">...</span>
+              )}
+              
+              <button 
+                className="page-btn nav" 
+                disabled={!pagination.has_next}
+                onClick={() => handlePageChange(pagination.current_page + 1)}
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -199,6 +323,8 @@ const MemberManagement = () => {
       <MemberFiltersModal 
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
+        activeFilters={activeFilters}
+        onApplyFilters={handleApplyFilters}
       />
     </div>
   );

@@ -1097,7 +1097,6 @@ tr:last-child td {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-bottom: 2px solid #e2e8f0;
-  white-space: nowrap;
   user-select: none;
 }
 
@@ -1131,7 +1130,6 @@ tr:last-child td {
 .list-table td {
   padding: 14px 20px;
   font-size: 13.5px;
-  white-space: nowrap;
   vertical-align: middle;
   color: #334155;
   border-bottom: 1px solid #f1f5f9;
@@ -1577,40 +1575,47 @@ tr:last-child td {
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.form-section-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 28px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-}
 
 .form-section-header {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 16px 24px;
-  border-bottom: 1px solid #e2e8f0;
   border-top-left-radius: 11px;
   border-top-right-radius: 11px;
 }
 
-/* Remove old theme background classes — now use left border accent only */
+/* Theme backgrounds for headers only */
 .form-section-card.theme-blue {
-  border-left: 4px solid #1a56db;
-  background: white;
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+.form-section-card.theme-blue .form-section-header {
+  background: #eff6ff;
 }
 
 .form-section-card.theme-green {
-  border-left: 4px solid #16a34a;
-  background: white;
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+.form-section-card.theme-green .form-section-header {
+  background: #f4fdf8;
 }
 
 .form-section-card.theme-purple {
-  border-left: 4px solid #7c3aed;
-  background: white;
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+.form-section-card.theme-purple .form-section-header {
+  background: #faf5ff;
 }
 
 .form-section-card.theme-orange {
-  border-left: 4px solid #ea580c;
-  background: white;
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+.form-section-card.theme-orange .form-section-header {
+  background: #fffaf5;
 }
 
 .form-section-body {

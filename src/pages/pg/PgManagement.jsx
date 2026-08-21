@@ -26,6 +26,15 @@ const PgManagement = () => {
   const [selectedPg, setSelectedPg] = useState(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
+  // Filters State
+  const [filters, setFilters] = useState({
+    property_type: 'All',
+    living_type: 'All',
+    property_status: 'All',
+    state: 'All States',
+    city: 'All Cities'
+  });
+  
   // API State
   const [pgList, setPgList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,17 +48,23 @@ const PgManagement = () => {
   });
 
   // Fetch PG Data
-  const fetchPgs = async (page = 1, search = '') => {
+  const fetchPgs = async (page = 1, search = '', currentFilters = filters) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get('/api/addpg/', {
-        params: {
-          page: page,
-          limit: pagination.limit,
-          search: search
-        }
-      });
+      const params = {
+        page: page,
+        limit: pagination.limit,
+        search: search
+      };
+
+      if (currentFilters.property_type !== 'All') params.property_type = currentFilters.property_type;
+      if (currentFilters.living_type !== 'All') params.living_type = currentFilters.living_type;
+      if (currentFilters.property_status !== 'All') params.property_status = currentFilters.property_status === 'Active' ? 'active' : 'inactive';
+      if (currentFilters.city !== 'All Cities') params.city = currentFilters.city;
+      if (currentFilters.state !== 'All States') params.state = currentFilters.state;
+
+      const response = await api.get('/api/addpg/', { params });
       if (response.data) {
         setPgList(response.data.data || []);
         if (response.data.pagination) {
@@ -75,7 +90,13 @@ const PgManagement = () => {
   }, [searchTerm]);
 
   const handlePageChange = (newPage) => {
-    fetchPgs(newPage, searchTerm);
+    fetchPgs(newPage, searchTerm, filters);
+  };
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+    setIsFilterModalOpen(false);
+    fetchPgs(1, searchTerm, newFilters);
   };
 
   const handleDeactivateClick = (pg) => {
@@ -83,11 +104,23 @@ const PgManagement = () => {
     setIsDeactivateModalOpen(true);
   };
 
-  const confirmDeactivate = () => {
-    // Here you would normally make an API call to deactivate the PG
-    console.log('Deactivating PG:', selectedPg);
-    setIsDeactivateModalOpen(false);
-    setSelectedPg(null);
+  const confirmDeactivate = async () => {
+    if (!selectedPg) return;
+    
+    try {
+      await api.delete('/api/addpg/', {
+        params: { pg_id: selectedPg.pg_id }
+      });
+      // Refresh the list after successful deletion
+      fetchPgs(pagination.current_page, searchTerm);
+    } catch (err) {
+      console.error("Error deactivating PG:", err);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message || "Unknown error";
+      setError(`Failed to deactivate PG. Error: ${errorMessage}`);
+    } finally {
+      setIsDeactivateModalOpen(false);
+      setSelectedPg(null);
+    }
   };
 
   return (
@@ -140,8 +173,8 @@ const PgManagement = () => {
               <tr>
                 <th>Code <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>PG Name <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Type <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Gender <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th>PG Type <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th>Living Type <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Contact Person <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Mobile <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Status <ArrowUpDown size={12} className="sort-icon" /></th>
@@ -261,6 +294,8 @@ const PgManagement = () => {
       <PgFiltersModal 
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
+        initialFilters={filters}
+        onApply={handleApplyFilters}
       />
     </div>
   );

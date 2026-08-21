@@ -1,15 +1,19 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 
-const recentPayments = [
-  { id: 1, initials: 'NV', name: 'Nikhil Verma', pg: 'Sunrise PG', amount: '₹12,000', date: 'Today, 10:21 AM' },
-  { id: 2, initials: 'PD', name: 'Priya Das', pg: 'Lotus Villa', amount: '₹15,500', date: 'Today, 09:15 AM' },
-  { id: 3, initials: 'AK', name: 'Anil Kapoor', pg: 'Green View', amount: '₹11,000', date: 'Yesterday, 08:45 PM' },
-  { id: 4, initials: 'KJ', name: 'Kavita Jain', pg: 'Oasis', amount: '₹14,000', date: 'Jul 31, 2026' },
-  { id: 5, initials: 'MY', name: 'Manish Yadav', pg: 'Park View', amount: '₹13,500', date: 'Jul 31, 2026' },
-];
+const getInitials = (name) => {
+  if (!name) return 'UN';
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
 
-const RecentPaymentsTable = () => {
+const formatCurrency = (amount) => `₹${amount?.toLocaleString('en-IN')}`;
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' });
+};
+
+const RecentPaymentsTable = ({ data = [] }) => {
   return (
     <div className="table-card">
       <div className="table-header">
@@ -27,20 +31,20 @@ const RecentPaymentsTable = () => {
             </tr>
           </thead>
           <tbody>
-            {recentPayments.map((item) => (
-              <tr key={item.id}>
+            {(data || []).map((item) => (
+              <tr key={item.payment_id}>
                 <td>
                   <div className="member-info">
-                    <div className="member-avatar">{item.initials}</div>
-                    <span>{item.name}</span>
+                    <div className="member-avatar">{getInitials(item.member_name)}</div>
+                    <span>{item.member_name}</span>
                   </div>
                 </td>
-                <td>{item.pg}</td>
-                <td><strong>{item.amount}</strong></td>
-                <td>{item.date}</td>
+                <td>{item.pg_name}</td>
+                <td><strong>{formatCurrency(item.amount)}</strong></td>
+                <td>{formatDate(item.date)}</td>
                 <td>
                   <span className="status-badge status-green">
-                    <Check size={12} strokeWidth={3} /> Paid
+                    <Check size={12} strokeWidth={3} /> {item.status}
                   </span>
                 </td>
               </tr>

@@ -242,7 +242,7 @@ const EditPg = () => {
   const genderOptions = [
     { value: 'Boys', label: 'Boys' },
     { value: 'Girls', label: 'Girls' },
-    { value: 'Family', label: 'Family' }
+    { value: 'Co-Living', label: 'Co-Living' }
   ];
 
   // Dynamic Location Options
@@ -358,7 +358,7 @@ const EditPg = () => {
             <span className="form-helper-text">Alphanumeric with spaces</span>
           </div>
           <div className="form-group">
-            <label className="form-label">Type <span className="required">*</span></label>
+            <label className="form-label">PG Type <span className="required">*</span></label>
             <CustomSelect 
               options={typeOptions}
               value={formData.type}
@@ -367,7 +367,7 @@ const EditPg = () => {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Gender Type <span className="required">*</span></label>
+            <label className="form-label">Living Type <span className="required">*</span></label>
             <CustomSelect 
               options={genderOptions}
               value={formData.genderType}

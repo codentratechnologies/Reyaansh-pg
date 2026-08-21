@@ -1,12 +1,13 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
-const data = [
-  { name: 'Occupied Beds', value: 382, color: '#1a56db' },
-  { name: 'Vacant Beds', value: 68, color: '#e2e8f0' },
-];
-
-const OccupancyChart = () => {
+const OccupancyChart = ({ data }) => {
+  const chartData = [
+    { name: 'Occupied Beds', value: data?.occupied_beds?.count || 0, color: '#1a56db', percentage: data?.occupied_beds?.percentage || 0 },
+    { name: 'Vacant Beds', value: data?.vacant_beds?.count || 0, color: '#e2e8f0', percentage: data?.vacant_beds?.percentage || 0 },
+  ];
+  
+  const total = chartData[0].value + chartData[1].value;
   return (
     <div className="chart-card">
       <div className="chart-header">
@@ -21,7 +22,7 @@ const OccupancyChart = () => {
                 itemStyle={{ fontSize: '12px', fontWeight: 600, color: '#000000' }}
               />
               <Pie
-                data={data}
+                data={chartData}
                 innerRadius={50}
                 outerRadius={70}
                 startAngle={90}
@@ -31,7 +32,7 @@ const OccupancyChart = () => {
                 stroke="#ffffff"
                 strokeWidth={2}
               >
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -43,14 +44,14 @@ const OccupancyChart = () => {
             <span className="legend-dot" style={{ backgroundColor: '#1a56db' }}></span>
             <div className="legend-text">
               <div className="legend-name">Occupied Beds</div>
-              <div className="legend-val">382 (85%)</div>
+              <div className="legend-val">{chartData[0].value} ({chartData[0].percentage}%)</div>
             </div>
           </div>
           <div className="legend-item">
             <span className="legend-dot" style={{ backgroundColor: '#e2e8f0' }}></span>
             <div className="legend-text">
               <div className="legend-name">Vacant Beds</div>
-              <div className="legend-val">68 (15%)</div>
+              <div className="legend-val">{chartData[1].value} ({chartData[1].percentage}%)</div>
             </div>
           </div>
         </div>

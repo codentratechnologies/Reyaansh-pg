@@ -8,47 +8,78 @@ import {
 import Button from '../../components/common/Button';
 import '../../assets/dashboard.css';
 
+import api from '../../utils/api';
+
 const ViewMember = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   
   const [activeTab, setActiveTab] = useState('details');
 
-  // Mock Data
-  const member = {
-    id: 'M01',
-    name: 'Rahul Patel',
-    mobile: '9876543210',
-    altMobile: '9123456780',
-    email: 'rahul@email.com',
-    dob: '15-Aug-2000',
-    gender: 'Male',
-    occupation: 'Student',
-    company: 'ABC University',
-    joinedDate: '10-Jan-2024',
-    status: 'Active',
+  const [memberData, setMemberData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  React.useEffect(() => {
+    const fetchMember = async () => {
+      try {
+        const response = await api.get('/api/members', {
+          params: { member_id: id }
+        });
+        if (response.data && response.data.data) {
+          setMemberData(response.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch member details:", err);
+        setError("Failed to load member details.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) {
+      fetchMember();
+    }
+  }, [id]);
+
+  const member = memberData ? {
+    id: memberData.member_id,
+    name: memberData.full_name,
+    mobile: memberData.mobile_number,
+    altMobile: memberData.alternate_mobile_number || '-',
+    email: memberData.email || '-',
+    dob: memberData.dob || '-',
+    gender: memberData.gender || '-',
+    occupation: memberData.occupation || '-',
+    company: memberData.company_college_name || '-',
+    joinedDate: memberData.created_at ? new Date(memberData.created_at).toLocaleDateString() : '-',
+    status: memberData.status || 'Active',
     
-    contactPerson: 'Ajay Patel',
-    relationship: 'Father',
+    contactPerson: memberData.emergency_contact_name || '-',
+    relationship: memberData.emergency_contact_relationship || '-',
+    contactNumber: memberData.emergency_contact_number || '-',
     
-    addressLine1: '123 MG Road',
-    addressLine2: 'Apt 4B',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pincode: '560001',
-    country: 'India',
+    addressLine1: memberData.address_line_1 || '-',
+    addressLine2: memberData.address_line_2 || '-',
+    city: memberData.city || '-',
+    state: memberData.state || '-',
+    pincode: memberData.pincode || '-',
+    country: memberData.country || '-',
     
-    pgType: 'PG',
-    pgName: 'Sunshine PG',
-    room: '101',
-    bed: 'A',
+    pgType: memberData.pg_type || '-',
+    pgName: memberData.pg_name || '-',
+    room: memberData.room_number || '-',
+    bed: memberData.bed_name || '-',
     
-    rent: '6,000.00',
-    deposit: '10,000.00',
-    maintenance: '500.00',
-    dueDate: '05-Aug-2024',
-    noticePeriod: '30 Days'
-  };
+    rent: memberData.monthly_rent ? Number(memberData.monthly_rent).toLocaleString('en-IN') : '-',
+    deposit: memberData.security_deposit ? Number(memberData.security_deposit).toLocaleString('en-IN') : '-',
+    maintenance: memberData.maintenance_charge ? Number(memberData.maintenance_charge).toLocaleString('en-IN') : '-',
+    dueDate: memberData.rent_due_date ? `${memberData.rent_due_date} of every month` : '-',
+    noticePeriod: memberData.notice_period_days ? `${memberData.notice_period_days} Days` : '-',
+    
+    aadhaarNo: memberData.aadhaar_number || '-',
+    panNo: memberData.pan_number || '-',
+    dlNo: memberData.driving_licence_number || '-'
+  } : null;
 
   const paymentHistoryData = [
     { id: 1, month: 'Aug-26', amount: '6,000.00', dueDate: '05-Aug-26', paymentDate: '-', status: 'In Review', txId: 'TXN987654321', remarks: '-' },
@@ -86,24 +117,30 @@ const ViewMember = () => {
         </div>
       </div>
 
-      {/* Top Profile Card */}
-      <div className="member-profile-card">
-        <div className="member-avatar-large">
-          <User size={40} />
-        </div>
-        <div className="member-profile-info">
-          <h2>
-            {member.name}
-            <span className={`badge-status-${member.status.toLowerCase()}`}>{member.status}</span>
-          </h2>
-          <p>Member ID: {member.id}</p>
-          <div className="member-meta-row">
-            <div className="member-meta-item"><Phone size={16} /> {member.mobile}</div>
-            <div className="member-meta-item"><Mail size={16} /> {member.email}</div>
-            <div className="member-meta-item"><Calendar size={16} /> Joined on {member.joinedDate}</div>
+      {isLoading ? (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading member details...</div>
+      ) : error ? (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>{error}</div>
+      ) : member ? (
+        <>
+          {/* Top Profile Card */}
+          <div className="member-profile-card">
+            <div className="member-avatar-large">
+              <User size={40} />
+            </div>
+            <div className="member-profile-info">
+              <h2>
+                {member.name}
+                <span className={`badge-status-${member.status.toLowerCase().replace(' ', '-')}`}>{member.status}</span>
+              </h2>
+              <p>Member ID: {member.id}</p>
+              <div className="member-meta-row">
+                <div className="member-meta-item"><Phone size={16} /> {member.mobile}</div>
+                {member.email !== '-' && <div className="member-meta-item"><Mail size={16} /> {member.email}</div>}
+                <div className="member-meta-item"><Calendar size={16} /> Joined on {member.joinedDate}</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* Tabs */}
       <div className="member-tabs">
@@ -377,8 +414,9 @@ const ViewMember = () => {
           </div>
         </div>
       )}
-
-    </div>
+      </>
+    ) : null}
+  </div>
   );
 };
 

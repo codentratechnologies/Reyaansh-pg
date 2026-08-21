@@ -11,8 +11,33 @@ import Button from '../../components/common/Button';
 import CustomSelect from '../../components/common/CustomSelect';
 import '../../assets/dashboard.css';
 
+import api from '../../utils/api';
+
 const AddMember = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Availability Data
+  const [availabilityData, setAvailabilityData] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [availableBeds, setAvailableBeds] = useState([]);
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        const response = await api.get('/api/pg/availability');
+        if (response.data && Array.isArray(response.data)) {
+          setAvailabilityData(response.data);
+        } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          setAvailabilityData(response.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch PG availability:", err);
+      }
+    };
+    fetchAvailability();
+  }, []);
 
   const [formData, setFormData] = useState({
     memberId: 'Auto-generated',
@@ -60,7 +85,74 @@ const AddMember = () => {
   };
 
   const handleSelectChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // Cascade logic for PG selection
+      if (field === 'pgName') {
+        updated.roomNumber = '';
+        updated.bed = '';
+        const selectedPg = availabilityData.find(pg => (pg.pg_id === value || pg.id === value));
+        setAvailableRooms(selectedPg?.available_rooms || []);
+        setAvailableBeds([]);
+      } else if (field === 'roomNumber') {
+        updated.bed = '';
+        const selectedRoom = availableRooms.find(r => (r.room_id === value || r.room_number === value));
+        setAvailableBeds(selectedRoom?.available_beds || []);
+      }
+      
+      return updated;
+    });
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const payload = {
+        full_name: formData.fullName,
+        mobile_number: formData.mobile,
+        occupation: formData.occupation,
+        dob: formData.dob,
+        gender: formData.gender,
+        company_college_name: formData.company,
+        aadhaar_number: formData.aadhaarNo,
+        emergency_contact_name: formData.contactPerson,
+        emergency_contact_relationship: formData.relationship,
+        emergency_contact_number: formData.contactNumber,
+        address_line_1: formData.addressLine1,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        pincode: formData.pincode,
+        pg_type: formData.pgType,
+        pg_id: formData.pgName,
+        room_id: formData.roomNumber,
+        monthly_rent: Number(formData.monthlyRent),
+        security_deposit: Number(formData.securityDeposit),
+        maintenance_charge: Number(formData.maintenanceCharge),
+        rent_due_date: formData.rentDueDate,
+        notice_period_days: Number(formData.noticePeriod),
+        status: formData.status
+      };
+      
+      if (formData.pgType === 'PG') payload.bed_id = formData.bed;
+      if (formData.status === 'Notice Period') payload.status_reason = formData.reason;
+      if (formData.altMobile) payload.alternate_mobile_number = formData.altMobile;
+      if (formData.email) payload.email = formData.email;
+      if (formData.panNo) payload.pan_number = formData.panNo;
+      if (formData.dlNo) payload.driving_licence_number = formData.dlNo;
+      if (formData.addressLine2) payload.address_line_2 = formData.addressLine2;
+
+      await api.post('/api/members', payload);
+      navigate('/member-management');
+    } catch (err) {
+      console.error("Failed to add member:", err);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message || err.message || "Unknown error";
+      setError(`Failed to save member. Error: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const pgTypeOptions = [
@@ -124,6 +216,10 @@ const AddMember = () => {
       label: city.name
     }))
     : [];
+
+  const pgOptions = availabilityData.map(pg => ({ value: pg.pg_id || pg.id, label: pg.name || pg.pg_name }));
+  const roomOptions = availableRooms.map(r => ({ value: r.room_id || r.id, label: r.room_number || r.flat_no || r.room_name }));
+  const bedOptions = availableBeds.map(b => ({ value: b.bed_id || b.id, label: b.bed_name || b.bed_number }));
 
   return (
     <div className="page-container">
@@ -341,27 +437,27 @@ const AddMember = () => {
           </div>
         </div>
 
-        <div className="form-grid-2">
-          <div className="form-group">
-            <label className="form-label">PG Type <span className="required">*</span></label>
-            <CustomSelect options={pgTypeOptions} value={formData.pgType} onChange={(val) => handleSelectChange('pgType', val)} placeholder="Select type" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">PG Name <span className="required">*</span></label>
-            <CustomSelect options={[{ value: 'PG1', label: 'Sunshine PG' }]} value={formData.pgName} onChange={(val) => handleSelectChange('pgName', val)} placeholder="Select PG" />
-          </div>
-        </div>
-        <div className="form-grid-2" style={{ marginTop: '20px' }}>
-          <div className="form-group">
-            <label className="form-label">Room/Flat Number <span className="required">*</span></label>
-            <CustomSelect options={[{ value: '101', label: '101' }]} value={formData.roomNumber} onChange={(val) => handleSelectChange('roomNumber', val)} placeholder="Select room" />
-          </div>
-          {formData.pgType !== 'Apartment' && (
+        <div className="form-section-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="form-grid-2">
             <div className="form-group">
-              <label className="form-label">Bed <span className="required">*</span></label>
-              <CustomSelect options={[{ value: 'A', label: 'A' }]} value={formData.bed} onChange={(val) => handleSelectChange('bed', val)} placeholder="Select bed" />
+              <label className="form-label">PG Type <span className="required">*</span></label>
+              <CustomSelect options={pgTypeOptions} value={formData.pgType} onChange={(val) => handleSelectChange('pgType', val)} placeholder="Select type" />
             </div>
-          )}
+            <div className="form-group">
+              <label className="form-label">PG Name <span className="required">*</span></label>
+              <CustomSelect options={pgOptions} value={formData.pgName} onChange={(val) => handleSelectChange('pgName', val)} placeholder={pgOptions.length ? "Select PG" : "Loading..."} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Room/Flat Number <span className="required">*</span></label>
+              <CustomSelect options={roomOptions} value={formData.roomNumber} onChange={(val) => handleSelectChange('roomNumber', val)} placeholder={roomOptions.length ? "Select room" : "Select PG first"} />
+            </div>
+            {formData.pgType !== 'Apartment' && (
+              <div className="form-group">
+                <label className="form-label">Bed <span className="required">*</span></label>
+                <CustomSelect options={bedOptions} value={formData.bed} onChange={(val) => handleSelectChange('bed', val)} placeholder={bedOptions.length ? "Select bed" : "Select room first"} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -436,13 +532,19 @@ const AddMember = () => {
         </div>
       </div>
 
+      {error && (
+        <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '12px 16px', margin: '16px 0', borderRadius: '6px', fontSize: '14px', border: '1px solid #fecaca' }}>
+          {error}
+        </div>
+      )}
+
       {/* Bottom Actions */}
-      <div className="form-actions" style={{ padding: '24px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '32px' }}>
-        <Button variant="outline" icon={<X size={16} />} onClick={() => navigate('/member-management')}>
+      <div className="form-actions" style={{ padding: '24px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '16px' }}>
+        <Button variant="outline" icon={<X size={16} />} onClick={() => navigate('/member-management')} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button variant="primary" icon={<Save size={16} />} onClick={() => navigate('/member-management')}>
-          Save Member
+        <Button variant="primary" icon={<Save size={16} />} onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : 'Save Member'}
         </Button>
       </div>
 

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filter, RotateCcw, Building2, BedDouble, Users, PieChart, Wallet, Receipt } from 'lucide-react';
 import StatCard from '../../components/dashboard/StatCard';
+import api from '../../utils/api';
 
 import OccupancyChart from '../../components/dashboard/charts/OccupancyChart';
 import RevenueTrendChart from '../../components/dashboard/charts/RevenueTrendChart';
@@ -13,8 +14,51 @@ import RentOverdueAlert from '../../components/dashboard/tables/RentOverdueAlert
 import PendingApprovalsAlert from '../../components/dashboard/tables/PendingApprovalsAlert';
 import DashboardFiltersModal from '../../components/dashboard/DashboardFiltersModal';
 
+const formatCurrency = (val) => {
+  if (!val) return '₹0';
+  if (val >= 1000000) return `₹${(val / 1000000).toFixed(2)}M`;
+  if (val >= 1000) return `₹${(val / 1000).toFixed(1)}K`;
+  return `₹${val}`;
+};
+
 const Dashboard = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [kpiData, setKpiData] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [tablesData, setTablesData] = useState(null);
+  const [alertsData, setAlertsData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [kpiRes, chartRes, tablesRes, alertsRes] = await Promise.all([
+          api.get('/api/dashboard-kpis/'),
+          api.get('/api/dashboard-charts/'),
+          api.get('/api/dashboard-tables/'),
+          api.get('/api/dashboard-alerts/')
+        ]);
+        
+        if (kpiRes.data?.kpis) {
+          setKpiData(kpiRes.data.kpis);
+        }
+        if (chartRes.data) {
+          setChartData(chartRes.data);
+        }
+        if (tablesRes.data) {
+          setTablesData(tablesRes.data);
+        }
+        if (alertsRes.data) {
+          setAlertsData(alertsRes.data);
+        }
+      } catch (error) {
+        console.error("Failed to load Dashboard data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="dashboard-page">
@@ -38,12 +82,12 @@ const Dashboard = () => {
           icon={<Building2 size={22} color="#1a56db" />}
           iconBg="#eff6ff"
           title="Total PGs"
-          value="12"
+          value={isLoading ? "..." : kpiData?.total_pgs?.value || "0"}
           subtext={
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#16a34a' }}>11 Active</span>
+              <span style={{ color: '#16a34a' }}>{kpiData?.total_pgs?.active || 0} Active</span>
               <span style={{ color: '#94a3b8' }}>•</span>
-              <span style={{ color: '#dc2626' }}>1 Inactive</span>
+              <span style={{ color: '#dc2626' }}>{kpiData?.total_pgs?.inactive || 0} Inactive</span>
             </div>
           }
         />
@@ -51,20 +95,20 @@ const Dashboard = () => {
           icon={<BedDouble size={22} color="#1a56db" />}
           iconBg="#eff6ff"
           title="Total Rooms"
-          value="450"
+          value={isLoading ? "..." : kpiData?.total_rooms || "0"}
           subtext={<span style={{ color: '#64748b' }}>Total Rooms</span>}
         />
         <StatCard 
           icon={<Users size={22} color="#16a34a" />}
           iconBg="#f0fdf4"
           title="Total Members"
-          value="382"
+          value={isLoading ? "..." : kpiData?.total_members?.value || "0"}
           accentClass="accent-green"
           subtext={
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#16a34a' }}>350 Active</span>
+              <span style={{ color: '#16a34a' }}>{kpiData?.total_members?.active || 0} Active</span>
               <span style={{ color: '#94a3b8' }}>•</span>
-              <span style={{ color: '#ea580c' }}>32 Notice</span>
+              <span style={{ color: '#ea580c' }}>{kpiData?.total_members?.notice || 0} Notice</span>
             </div>
           }
         />
@@ -72,12 +116,16 @@ const Dashboard = () => {
           icon={<PieChart size={22} color="#7c3aed" />}
           iconBg="#f3e8ff"
           title="Occupancy Rate"
-          value="85%"
+          value={isLoading ? "..." : `${kpiData?.occupancy_rate?.percentage || 0}%`}
           accentClass="accent-purple"
           subtext={
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ color: '#64748b' }}>Occupied Beds</span>
-              <span style={{ color: '#16a34a' }}>↑ 2.5% vs Last Month</span>
+              <span style={{ color: '#64748b' }}>{kpiData?.occupancy_rate?.occupied || 0} Occupied Beds</span>
+              {kpiData?.occupancy_rate?.trend && (
+                <span style={{ color: kpiData.occupancy_rate.trend.startsWith('+') ? '#16a34a' : '#dc2626' }}>
+                  {kpiData.occupancy_rate.trend} vs Last Month
+                </span>
+              )}
             </div>
           }
         />
@@ -85,12 +133,16 @@ const Dashboard = () => {
           icon={<Wallet size={22} color="#16a34a" />}
           iconBg="#f0fdf4"
           title="Rent Collected"
-          value="₹3.80M"
+          value={isLoading ? "..." : formatCurrency(kpiData?.rent_collected?.amount)}
           accentClass="accent-green"
           subtext={
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
               <span style={{ color: '#64748b' }}>This Month</span>
-              <span style={{ color: '#16a34a' }}>↑ 12.4% vs Last Month</span>
+              {kpiData?.rent_collected?.trend && (
+                <span style={{ color: kpiData.rent_collected.trend.startsWith('+') ? '#16a34a' : '#dc2626' }}>
+                  {kpiData.rent_collected.trend} vs Last Month
+                </span>
+              )}
             </div>
           }
         />
@@ -98,12 +150,16 @@ const Dashboard = () => {
           icon={<Receipt size={22} color="#ea580c" />}
           iconBg="#fff7ed"
           title="Pending Rent"
-          value="₹350K"
+          value={isLoading ? "..." : formatCurrency(kpiData?.pending_rent?.amount)}
           accentClass="accent-orange"
           subtext={
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
-              <span style={{ color: '#64748b' }}>From 45 Members</span>
-              <span style={{ color: '#dc2626' }}>↑ 8.7% vs Last Month</span>
+              <span style={{ color: '#64748b' }}>From {kpiData?.pending_rent?.members || 0} Members</span>
+              {kpiData?.pending_rent?.trend && (
+                <span style={{ color: kpiData.pending_rent.trend.startsWith('+') ? '#dc2626' : '#16a34a' }}>
+                  {kpiData.pending_rent.trend} vs Last Month
+                </span>
+              )}
             </div>
           }
         />
@@ -111,23 +167,23 @@ const Dashboard = () => {
 
       {/* Charts Row */}
       <div className="charts-grid">
-        <OccupancyChart />
-        <MemberStatusChart />
-        <RevenueTrendChart />
-        <RevenueByPGChart />
+        <OccupancyChart data={chartData?.occupancy_overview} />
+        <MemberStatusChart data={chartData?.member_status_distribution} />
+        <RevenueTrendChart data={chartData?.monthly_rent_collection_trend} />
+        <RevenueByPGChart data={chartData?.revenue_by_pg} />
       </div>
 
       {/* Tables Row */}
       {/* Standard Tables Row */}
       <div className="tables-grid">
-        <RentDueTable />
-        <RecentPaymentsTable />
+        <RentDueTable data={tablesData?.upcoming_rent_due} />
+        <RecentPaymentsTable data={tablesData?.recent_payments} />
       </div>
 
       {/* Alert Tables Row */}
       <div className="tables-grid">
-        <RentOverdueAlert />
-        <PendingApprovalsAlert />
+        <RentOverdueAlert data={alertsData?.rent_overdue} />
+        <PendingApprovalsAlert data={alertsData?.pending_approvals} />
       </div>
 
 

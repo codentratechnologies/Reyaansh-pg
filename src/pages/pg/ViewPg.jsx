@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../../utils/api';
 import { 
   ChevronRight, 
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   Lock,
   Info,
   ShieldCheck,
+  ShieldAlert,
   Wifi,
   Tv,
   Brush,
@@ -31,47 +33,91 @@ const ViewPg = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // In a real app, you would fetch data using this ID. 
-  // Using static mock data based on the design for now.
-  const pgData = {
-    code: id || 'P001',
-    name: 'Sai PG',
-    type: 'PG',
-    gender: 'Male',
-    contact: 'Ravi Kumar',
-    mobile: '9876543210',
-    description: 'Near main market',
-    status: 'Active',
-    address1: 'Plot 42, Sector 1',
-    address2: 'Opposite Park',
-    area: 'Koramangala',
-    landmark: 'Near Metro Station',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pincode: '560034',
-    country: 'India',
-    rooms: 20,
-    sharing: 2,
-    rent: '8,500.00',
-    amenities: {
-      wifi: true,
-      water: true,
-      washing: true,
-      refrigerator: false,
-      tv: true,
-      cctv: true,
-      parking: true,
-      lift: false,
-      housekeeping: true,
-      food: true,
-      staff: false
-    },
-    roomList: [
-      { roomNo: 'A-101', sharing: 2, rent: '8500.00' },
-      { roomNo: 'A-102', sharing: 1, rent: '12000.00' },
-      { roomNo: 'A-103', sharing: 3, rent: '6500.00' },
-    ]
-  };
+  const [pgData, setPgData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPgData = async () => {
+      try {
+        const response = await api.get(`/api/addpg/`, { params: { pg_id: id } });
+        const data = response.data;
+        const pg = Array.isArray(data.data) ? data.data[0] : (data.data || data);
+
+        if (pg) {
+          let rooms = [];
+          if (pg.rooms && typeof pg.rooms === 'object' && !Array.isArray(pg.rooms)) {
+            rooms = Object.values(pg.rooms).map(r => ({
+              roomNo: r.room_number || '',
+              sharing: r.sharing || '',
+              rent: r.rent || '',
+              bhk: r.bhk || ''
+            }));
+          } else if (pg.room_config && Array.isArray(pg.room_config)) {
+            rooms = pg.room_config.map(r => ({
+              roomNo: r.room_number || '',
+              sharing: r.sharing || '',
+              rent: r.rent || '',
+              bhk: r.bhk || ''
+            }));
+          }
+
+          setPgData({
+            code: pg.pg_id || id,
+            name: pg.name || pg.pg_name || '',
+            type: pg.pg_type || 'PG',
+            gender: pg.living_type || 'Boys',
+            contact: pg.contact_person || '',
+            mobile: pg.mobile || '',
+            description: pg.description || '',
+            status: pg.property_status === false ? 'Inactive' : 'Active',
+            address1: pg.address_line_1 || '',
+            address2: pg.address_line_2 || '',
+            area: pg.area || '',
+            landmark: pg.landmark || '',
+            city: pg.city || '',
+            state: pg.state || '',
+            pincode: pg.pincode || '',
+            country: pg.country || 'IN',
+            rooms: pg.no_of_rooms || rooms.length,
+            amenities: pg.amenities || [],
+            roomList: rooms
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch PG data:", err);
+        setError("Failed to load PG details.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPgData();
+    }
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <div style={{ color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '24px', height: '24px', border: '3px solid #e0e7ff', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <span>Loading property details...</span>
+        </div>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (error || !pgData) {
+    return (
+      <div className="page-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <XCircle size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
+        <h2 style={{ fontSize: '20px', color: '#0f172a', marginBottom: '8px' }}>{error || 'PG Not Found'}</h2>
+        <Button variant="primary" onClick={() => navigate('/pg-management')}>Back to List</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -97,14 +143,25 @@ const ViewPg = () => {
       </div>
 
       {/* Top Alert */}
-      <div className="alert-box alert-success">
-        <ShieldCheck size={20} />
-        <span>This property is currently active and operational.</span>
-        <div className="alert-badge">
-          <div style={{width: 6, height: 6, borderRadius: '50%', background: '#16a34a'}}></div>
-          ACTIVE
+      {pgData.status === 'Active' ? (
+        <div className="alert-box alert-success">
+          <ShieldCheck size={20} />
+          <span>This property is currently active and operational.</span>
+          <div className="alert-badge">
+            <div style={{width: 6, height: 6, borderRadius: '50%', background: '#16a34a'}}></div>
+            ACTIVE
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="alert-box" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>
+          <ShieldAlert size={20} />
+          <span>This property is currently marked as inactive.</span>
+          <div className="alert-badge" style={{ background: '#fee2e2', color: '#ef4444' }}>
+            <div style={{width: 6, height: 6, borderRadius: '50%', background: '#ef4444'}}></div>
+            INACTIVE
+          </div>
+        </div>
+      )}
 
       {/* Basic Information Card */}
       <div className="form-section-card theme-blue">
@@ -147,7 +204,7 @@ const ViewPg = () => {
             <div className="basic-info-right">
               <div className="kv-grid">
                 <div className="kv-row">
-                  <span className="kv-label">Gender Type</span>
+                  <span className="kv-label">Living Type</span>
                   <span className="kv-colon">:</span>
                   <span className="kv-value">{pgData.gender}</span>
                 </div>
@@ -251,7 +308,13 @@ const ViewPg = () => {
               <div className="kv-row">
                 <span className="kv-label">Property Status</span>
                 <span className="kv-colon">:</span>
-                <span className="kv-value"><span className="badge-status-active">Active</span></span>
+                <span className="kv-value">
+                  {pgData.status === 'Active' ? (
+                    <span className="badge-status-active">Active</span>
+                  ) : (
+                    <span className="badge-status-inactive" style={{ background: '#fee2e2', color: '#ef4444', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>Inactive</span>
+                  )}
+                </span>
               </div>
             </div>
             <div className="alert-box alert-info-purple no-margin" style={{ marginTop: '16px' }}>
@@ -327,47 +390,47 @@ const ViewPg = () => {
           <div className="form-grid-4">
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Wifi size={18} /></span> WiFi</div>
-              {pgData.amenities.wifi ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('WiFi') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Droplet size={18} /></span> RO Water</div>
-              {pgData.amenities.water ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('RO Water') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Wind size={18} /></span> Washing Machine</div>
-              {pgData.amenities.washing ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('Washing Machine') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Snowflake size={18} /></span> Refrigerator</div>
-              {pgData.amenities.refrigerator ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('Refrigerator') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Monitor size={18} /></span> TV</div>
-              {pgData.amenities.tv ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('TV') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Camera size={18} /></span> CCTV</div>
-              {pgData.amenities.cctv ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('CCTV') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Car size={18} /></span> Parking</div>
-              {pgData.amenities.parking ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('Parking') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><ArrowLeft size={18} style={{transform:'rotate(90deg)'}} /></span> Lift</div>
-              {pgData.amenities.lift ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('Lift') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><Brush size={18} /></span> House Keeping</div>
-              {pgData.amenities.housekeeping ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('House Keeping') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><UtensilsCrossed size={18} /></span> Food</div>
-              {pgData.amenities.food ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('Food') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
             <div className="view-amenity">
               <div className="view-amenity-left"><span className="view-amenity-icon"><ChefHat size={18} /></span> Kitchen Staff</div>
-              {pgData.amenities.staff ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
+              {pgData.amenities.includes('Kitchen Staff') ? <CheckCircle2 size={16} color="#16a34a" /> : <XCircle size={16} color="#ef4444" />}
             </div>
           </div>
           <div className="alert-box alert-info-orange no-margin" style={{ marginTop: '16px' }}>
