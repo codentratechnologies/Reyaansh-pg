@@ -13,7 +13,7 @@ import AddPg from './pages/pg/AddPg';
 import ViewPg from './pages/pg/ViewPg';
 import EditPg from './pages/pg/EditPg';
 import MemberManagement from './pages/members/MemberManagement';
-import AddMember from './pages/members/AddMember';
+import MemberRegistration from './pages/public/MemberRegistration';
 import ViewMember from './pages/members/ViewMember';
 import EditMember from './pages/members/EditMember';
 import Checkout from './pages/checkout/Checkout';
@@ -40,7 +40,7 @@ function App() {
         <Route path="/pg-management/view/:id" element={<ProtectedRoute><DashboardLayout><ViewPg /></DashboardLayout></ProtectedRoute>} />
         <Route path="/pg-management/edit/:id" element={<ProtectedRoute><DashboardLayout><EditPg /></DashboardLayout></ProtectedRoute>} />
         <Route path="/member-management" element={<ProtectedRoute><DashboardLayout><MemberManagement /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/member-management/add" element={<ProtectedRoute><DashboardLayout><AddMember /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/register" element={<MemberRegistration />} />
         <Route path="/member-management/view/:id" element={<ProtectedRoute><DashboardLayout><ViewMember /></DashboardLayout></ProtectedRoute>} />
         <Route path="/member-management/edit/:id" element={<ProtectedRoute><DashboardLayout><EditMember /></DashboardLayout></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>} />

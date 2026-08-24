@@ -13,7 +13,7 @@ import '../../assets/dashboard.css';
 
 import api from '../../utils/api';
 
-const AddMember = () => {
+const MemberRegistration = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -22,6 +22,32 @@ const AddMember = () => {
   const [availabilityData, setAvailabilityData] = useState([]);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [availableBeds, setAvailableBeds] = useState([]);
+
+  useEffect(() => {
+    // Inject PWA Manifest for isolated Add Member app
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/add-member-manifest.json';
+    link.id = 'add-member-manifest';
+    document.head.appendChild(link);
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/add-member-sw.js').then((registration) => {
+        console.log('Isolated PWA SW registered:', registration);
+      }).catch((error) => {
+        console.error('Isolated PWA SW registration failed:', error);
+      });
+    }
+
+    return () => {
+      // Cleanup manifest link when unmounting
+      const existingLink = document.getElementById('add-member-manifest');
+      if (existingLink) {
+        document.head.removeChild(existingLink);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -222,23 +248,14 @@ const AddMember = () => {
   const bedOptions = availableBeds.map(b => ({ value: b.bed_id || b.id, label: b.bed_name || b.bed_number }));
 
   return (
-    <div className="page-container">
-      {/* Breadcrumb */}
-      <div className="breadcrumb">
-        <span className="crumb-link">Dashboard</span>
-        <span className="crumb-separator"><ChevronRight size={14} /></span>
-        <span className="crumb-link" onClick={() => navigate('/member-management')} style={{ cursor: 'pointer' }}>Member Management</span>
-        <span className="crumb-separator"><ChevronRight size={14} /></span>
-        <span className="crumb-current">Add Member</span>
-      </div>
+    <div style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
+      {/* Simple standalone header */}
+      <header style={{ backgroundColor: '#ffffff', padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <h1 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', fontWeight: '600' }}>Reyaansh PG - Member Registration</h1>
+      </header>
 
-      {/* Page Header */}
-      <div className="page-header" style={{ alignItems: 'flex-start', justifyContent: 'flex-end' }}>
-        <Button variant="outline" icon={<ArrowLeft size={16} />} className="add-pg-btn" onClick={() => navigate('/member-management')} title="Back">
-          <span className="hide-on-mobile">Back</span>
-        </Button>
-      </div>
-
+      <main style={{ padding: '24px' }}>
+        <div className="page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
       {/* 1. Personal Information */}
       <div className="form-section-card theme-blue">
         <div className="form-section-header">
@@ -548,8 +565,10 @@ const AddMember = () => {
         </Button>
       </div>
 
+        </div>
+      </main>
     </div>
   );
 };
 
-export default AddMember;
+export default MemberRegistration;

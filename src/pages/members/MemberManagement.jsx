@@ -163,9 +163,7 @@ const MemberManagement = () => {
             <Button variant="outline-primary" icon={<Upload size={16} />} onClick={() => setIsUploadModalOpen(true)} title="Upload Bank Statement">
               <span className="hide-on-mobile">Upload Bank Statement</span>
             </Button>
-            <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/member-management/add')} title="Add Member">
-              <span className="hide-on-mobile">Add Member</span>
-            </Button>
+
             <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)} style={{ position: 'relative' }}>
               Filters
               {Object.values(activeFilters).some(v => v !== '') && (

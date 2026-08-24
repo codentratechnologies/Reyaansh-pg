@@ -23,6 +23,7 @@ const formatCurrency = (val) => {
 
 const Dashboard = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
   const [kpiData, setKpiData] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [tablesData, setTablesData] = useState(null);
@@ -33,10 +34,10 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [kpiRes, chartRes, tablesRes, alertsRes] = await Promise.all([
-          api.get('/api/dashboard-kpis/'),
-          api.get('/api/dashboard-charts/'),
-          api.get('/api/dashboard-tables/'),
-          api.get('/api/dashboard-alerts/')
+          api.get('/api/dashboard-kpis/', { params: activeFilters }),
+          api.get('/api/dashboard-charts/', { params: activeFilters }),
+          api.get('/api/dashboard-tables/', { params: activeFilters }),
+          api.get('/api/dashboard-alerts/', { params: activeFilters })
         ]);
         
         if (kpiRes.data?.kpis) {
@@ -58,18 +59,21 @@ const Dashboard = () => {
       }
     };
     fetchDashboardData();
-  }, []);
+  }, [activeFilters]);
 
   return (
     <div className="dashboard-page">
       {/* Top Action Bar */}
       <div className="dashboard-top-bar" style={{ justifyContent: 'flex-end' }}>
         <div className="top-actions">
-          <button className="action-btn filter-btn" onClick={() => setIsFilterModalOpen(true)} title="Filter">
+          <button className="action-btn filter-btn" onClick={() => setIsFilterModalOpen(true)} title="Filter" style={{ position: 'relative' }}>
             <Filter size={16} color="#1a56db" />
             <span className="hide-on-mobile" style={{ color: '#1a56db', fontWeight: 600 }}>Filter</span>
+            {Object.values(activeFilters).some(v => v !== '') && (
+              <span style={{ position: 'absolute', top: '6px', right: '6px', background: '#dc2626', width: '8px', height: '8px', borderRadius: '50%' }}></span>
+            )}
           </button>
-          <button className="action-btn" title="Reset">
+          <button className="action-btn" onClick={() => setActiveFilters({})} title="Reset">
             <RotateCcw size={16} />
             <span className="hide-on-mobile">Reset</span>
           </button>
@@ -190,7 +194,9 @@ const Dashboard = () => {
       {/* Filters Modal */}
       <DashboardFiltersModal 
         isOpen={isFilterModalOpen} 
-        onClose={() => setIsFilterModalOpen(false)} 
+        onClose={() => setIsFilterModalOpen(false)}
+        activeFilters={activeFilters}
+        onApplyFilters={setActiveFilters}
       />
     </div>
   );

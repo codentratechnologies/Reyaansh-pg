@@ -10,6 +10,11 @@ export default defineConfig({
   ],
   server: {
     allowedHosts: true,
+    cors: {
+      origin: '*',
+      methods: '*',
+      allowedHeaders: '*',
+    },
     proxy: {
       '/api': {
         target: 'https://constrain-skyline-cubical.ngrok-free.dev',

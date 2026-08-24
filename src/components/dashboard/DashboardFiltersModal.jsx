@@ -1,86 +1,142 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, User, IndianRupee, Calendar } from 'lucide-react';
 import FilterModal from '../common/FilterModal';
 
-const DashboardFiltersModal = ({ isOpen, onClose }) => {
-  // Define filter config array
+const DashboardFiltersModal = ({ isOpen, onClose, activeFilters, onApplyFilters }) => {
+  const [filters, setFilters] = useState({
+    property_type: '',
+    living_type: '',
+    member_status: '',
+    rent_status: '',
+    month: '',
+    year: ''
+  });
+
+  useEffect(() => {
+    if (activeFilters) {
+      setFilters(prev => ({ ...prev, ...activeFilters }));
+    }
+  }, [activeFilters, isOpen]);
+
+  const handleChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
   const dashboardFilters = [
-    {
-      label: 'PG',
-      icon: Building2,
-      options: [{ value: 'All', label: 'All Properties' }, { value: 'PG1', label: 'Sunshine PG' }],
-      value: 'All',
-      onChange: () => {},
-      desc: 'Select a specific property or view all.'
-    },
     {
       label: 'Property Type',
       icon: Building2,
-      options: [{ value: 'All', label: 'All' }, { value: 'PG', label: 'PG' }],
-      value: 'All',
-      onChange: () => {},
+      options: [
+        { value: '', label: 'All Property Types' }, 
+        { value: 'PG', label: 'PG' },
+        { value: 'Apartment', label: 'Apartment' }
+      ],
+      value: filters.property_type,
+      onChange: (val) => handleChange('property_type', val),
       desc: 'Filters data based on the business model type.'
     },
     {
-      label: 'Gender Type',
+      label: 'Living Type',
       icon: User,
-      options: [{ value: 'All', label: 'All' }, { value: 'Male', label: 'Male' }],
-      value: 'All',
-      onChange: () => {},
-      desc: 'Segregates occupancy and revenue by gender.'
+      options: [
+        { value: '', label: 'All Living Types' }, 
+        { value: 'Boys', label: 'Boys' },
+        { value: 'Girls', label: 'Girls' },
+        { value: 'Family', label: 'Family' }
+      ],
+      value: filters.living_type,
+      onChange: (val) => handleChange('living_type', val),
+      desc: 'Segregates occupancy and revenue by living type.'
     },
     {
       label: 'Member Status',
       icon: User,
-      options: [{ value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }],
-      value: 'All',
-      onChange: () => {},
+      options: [
+        { value: '', label: 'All Statuses' }, 
+        { value: 'Active', label: 'Active' },
+        { value: 'Notice Period', label: 'Notice Period' },
+        { value: 'Inactive', label: 'Inactive' }
+      ],
+      value: filters.member_status,
+      onChange: (val) => handleChange('member_status', val),
       desc: 'Narrows down metrics based on current tenant state.'
     },
     {
       label: 'Rent Status',
       icon: IndianRupee,
-      options: [{ value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }],
-      value: 'All',
-      onChange: () => {},
+      options: [
+        { value: '', label: 'All Statuses' }, 
+        { value: 'Paid', label: 'Paid' },
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Overdue', label: 'Overdue' }
+      ],
+      value: filters.rent_status,
+      onChange: (val) => handleChange('rent_status', val),
       desc: 'Filters financial figures and lists by collection status.'
     },
     {
       label: 'Month',
       icon: Calendar,
-      options: [{ value: 'August', label: 'August' }],
-      value: 'August',
-      onChange: () => {},
+      options: [
+        { value: '', label: 'All Months' },
+        { value: '1', label: 'January' },
+        { value: '2', label: 'February' },
+        { value: '3', label: 'March' },
+        { value: '4', label: 'April' },
+        { value: '5', label: 'May' },
+        { value: '6', label: 'June' },
+        { value: '7', label: 'July' },
+        { value: '8', label: 'August' },
+        { value: '9', label: 'September' },
+        { value: '10', label: 'October' },
+        { value: '11', label: 'November' },
+        { value: '12', label: 'December' }
+      ],
+      value: filters.month,
+      onChange: (val) => handleChange('month', val),
       desc: 'Filters monthly recurring metrics.'
     },
     {
       label: 'Year',
       icon: Calendar,
-      options: [{ value: '2026', label: '2026' }],
-      value: '2026',
-      onChange: () => {},
+      options: [
+        { value: '', label: 'All Years' },
+        { value: '2024', label: '2024' },
+        { value: '2025', label: '2025' },
+        { value: '2026', label: '2026' }
+      ],
+      value: filters.year,
+      onChange: (val) => handleChange('year', val),
       desc: 'Filters annual aggregations.'
-    },
-    {
-      label: 'Date Range',
-      type: 'range',
-      icon: Calendar,
-      value: { start: '2026-08-01', end: '2026-08-31' },
-      onChange: () => {},
-      desc: 'Narrows data to a specific operational window.'
     }
   ];
 
-  // Dummy applied filters for the dashboard
-  const appliedFilters = [
-    { label: 'PG', value: 'Sunshine PG' },
-    { label: 'Property Type', value: 'PG' },
-    { label: 'Member Status', value: 'Active' },
-    { label: 'Rent Status', value: 'Pending' },
-    { label: 'Month', value: 'August' },
-    { label: 'Year', value: '2026' },
-    { label: 'Date Range', value: '01 Aug 2026 - 31 Aug 2026' }
-  ];
+  // Map non-empty filters for display in the modal's applied section
+  const appliedFiltersList = Object.entries(filters)
+    .filter(([_, value]) => value !== '')
+    .map(([key, value]) => ({
+      label: key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      value: value
+    }));
+
+  const handleApply = () => {
+    onApplyFilters(filters);
+    onClose();
+  };
+
+  const handleReset = () => {
+    const emptyFilters = {
+      property_type: '',
+      living_type: '',
+      member_status: '',
+      rent_status: '',
+      month: '',
+      year: ''
+    };
+    setFilters(emptyFilters);
+    onApplyFilters(emptyFilters);
+    onClose();
+  };
 
   return (
     <FilterModal
@@ -89,11 +145,11 @@ const DashboardFiltersModal = ({ isOpen, onClose }) => {
       title="Dashboard Filters"
       description="Refine your dashboard data by applying specific filters below."
       filters={dashboardFilters}
-      showQuickRange={true}
-      appliedFilters={appliedFilters}
-      onApply={onClose}
-      onReset={() => console.log('Reset Filters')}
-      onClearAll={() => console.log('Clear All')}
+      showQuickRange={false}
+      appliedFilters={appliedFiltersList}
+      onApply={handleApply}
+      onReset={handleReset}
+      onClearAll={handleReset}
     />
   );
 };
