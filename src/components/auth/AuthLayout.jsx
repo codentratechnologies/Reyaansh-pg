@@ -7,21 +7,10 @@ const AuthLayout = ({ children }) => {
       <div className="left-panel">
         {/* brand */}
         <div className="brand">
-          <svg className="brand-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="14" width="10" height="24" rx="1" stroke="#1a56db" strokeWidth="2"/>
-            <rect x="15" y="6" width="10" height="32" rx="1" stroke="#1a56db" strokeWidth="2"/>
-            <rect x="28" y="10" width="10" height="28" rx="1" stroke="#1a56db" strokeWidth="2"/>
-            <rect x="5" y="18" width="4" height="4" rx="0.5" fill="#1a56db"/>
-            <rect x="5" y="25" width="4" height="4" rx="0.5" fill="#1a56db"/>
-            <rect x="18" y="10" width="4" height="4" rx="0.5" fill="#1a56db"/>
-            <rect x="18" y="17" width="4" height="4" rx="0.5" fill="#1a56db"/>
-            <rect x="18" y="24" width="4" height="4" rx="0.5" fill="#1a56db"/>
-            <rect x="31" y="14" width="4" height="4" rx="0.5" fill="#1a56db"/>
-            <rect x="31" y="21" width="4" height="4" rx="0.5" fill="#1a56db"/>
-          </svg>
+          <img src="/logo.png" alt="Reyaansh Living PG Logo" className="brand-icon" style={{ width: '44px', height: '44px', objectFit: 'contain', transform: 'scale(1.2)', marginRight: '8px' }} />
           <div>
-            <div className="brand-name">PG Management</div>
-            <div className="brand-sub">System</div>
+            <div className="brand-name">Reyaansh Living</div>
+            <div className="brand-sub">PG</div>
           </div>
         </div>
 

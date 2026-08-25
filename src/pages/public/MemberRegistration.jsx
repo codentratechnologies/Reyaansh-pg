@@ -12,6 +12,7 @@ import CustomSelect from '../../components/common/CustomSelect';
 import '../../assets/dashboard.css';
 
 import api from '../../utils/api';
+import { generateToken } from '../../utils/firebase';
 
 const MemberRegistration = () => {
   const navigate = useNavigate();
@@ -47,6 +48,50 @@ const MemberRegistration = () => {
         document.head.removeChild(existingLink);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    // Request Notification Permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log('Notification permission status:', permission);
+      });
+    }
+
+    // Extract Device Model
+    const getDeviceModel = () => {
+      let model = 'Unknown Device';
+      
+      if (navigator.userAgentData) {
+        navigator.userAgentData.getHighEntropyValues(['model'])
+          .then(ua => {
+            if (ua.model) {
+              setFormData(prev => ({ ...prev, deviceModel: ua.model }));
+            } else {
+              setFormData(prev => ({ ...prev, deviceModel: parseUserAgent(navigator.userAgent) }));
+            }
+          })
+          .catch(() => {
+            setFormData(prev => ({ ...prev, deviceModel: parseUserAgent(navigator.userAgent) }));
+          });
+      } else {
+        setFormData(prev => ({ ...prev, deviceModel: parseUserAgent(navigator.userAgent) }));
+      }
+    };
+
+    const parseUserAgent = (ua) => {
+      if (/android/i.test(ua)) {
+        const match = ua.match(/Android.*?; (.*?)\sBuild/i);
+        return (match && match[1]) ? match[1] : 'Android Device';
+      } else if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+        if (/iPhone/.test(ua)) return 'iPhone';
+        if (/iPad/.test(ua)) return 'iPad';
+        return 'iOS Device';
+      }
+      return 'Desktop/Other';
+    };
+    
+    getDeviceModel();
   }, []);
 
   useEffect(() => {
@@ -103,7 +148,8 @@ const MemberRegistration = () => {
     noticePeriod: '',
 
     status: '',
-    reason: ''
+    reason: '',
+    deviceModel: ''
   });
 
   const handleTextChange = (field, value) => {
@@ -135,6 +181,9 @@ const MemberRegistration = () => {
     setIsSubmitting(true);
     setError(null);
     try {
+      const fcmToken = await generateToken();
+      console.log('Generated FCM Token:', fcmToken);
+
       const payload = {
         full_name: formData.fullName,
         mobile_number: formData.mobile,
@@ -159,7 +208,8 @@ const MemberRegistration = () => {
         maintenance_charge: Number(formData.maintenanceCharge),
         rent_due_date: formData.rentDueDate,
         notice_period_days: Number(formData.noticePeriod),
-        status: formData.status
+        status: formData.status,
+        device_code: formData.deviceModel
       };
       
       if (formData.pgType === 'PG') payload.bed_id = formData.bed;
@@ -169,6 +219,7 @@ const MemberRegistration = () => {
       if (formData.panNo) payload.pan_number = formData.panNo;
       if (formData.dlNo) payload.driving_licence_number = formData.dlNo;
       if (formData.addressLine2) payload.address_line_2 = formData.addressLine2;
+      if (fcmToken) payload.fcm_token = fcmToken;
 
       await api.post('/api/members', payload);
       navigate('/member-management');

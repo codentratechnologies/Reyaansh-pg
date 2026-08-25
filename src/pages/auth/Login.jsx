@@ -58,7 +58,7 @@ const Login = () => {
       </div>
 
       <h2 className="card-title">Welcome Back</h2>
-      <p className="card-sub">Sign in to continue to PG Management System</p>
+      <p className="card-sub">Sign in to continue to Reyaansh Living PG</p>
 
       {error && (
         <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', border: '1px solid #fecaca' }}>

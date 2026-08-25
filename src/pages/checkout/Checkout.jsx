@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, User, Building2, Smartphone, IndianRupee, Calendar, 
@@ -12,6 +12,32 @@ const Checkout = () => {
   const [selectedMethod, setSelectedMethod] = useState('');
   const [file, setFile] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  useEffect(() => {
+    // Inject PWA Manifest for isolated Checkout app
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/checkout-manifest.json';
+    link.id = 'checkout-manifest';
+    document.head.appendChild(link);
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/checkout-sw.js').then((registration) => {
+        console.log('Checkout PWA SW registered:', registration);
+      }).catch((error) => {
+        console.error('Checkout PWA SW registration failed:', error);
+      });
+    }
+
+    return () => {
+      // Cleanup manifest link when unmounting
+      const existingLink = document.getElementById('checkout-manifest');
+      if (existingLink) {
+        document.head.removeChild(existingLink);
+      }
+    };
+  }, []);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
