@@ -1,10 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '', // Using Vite proxy configured in vite.config.js
+  baseURL: import.meta.env.VITE_API_BASE_URL || '', // Uses env variable in production, Vite proxy in dev
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
   },
 });
 
