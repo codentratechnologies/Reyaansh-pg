@@ -757,9 +757,22 @@ input[type=number] {
 }
 
 .table-container {
-  overflow-x: hidden;
+  overflow-x: auto;
   width: 100%;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 5px;
+}
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 table {
@@ -1078,6 +1091,7 @@ tr:last-child td {
 
 .list-table {
   width: 100%;
+  min-width: 1050px;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -1089,7 +1103,7 @@ tr:last-child td {
 }
 
 .list-table th {
-  padding: 13px 20px;
+  padding: 13px 16px;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   color: #64748b;
   font-size: 10.5px;
@@ -1098,6 +1112,7 @@ tr:last-child td {
   letter-spacing: 0.08em;
   border-bottom: 2px solid #e2e8f0;
   user-select: none;
+  white-space: nowrap;
 }
 
 .list-table th:first-child {
@@ -1128,12 +1143,13 @@ tr:last-child td {
 }
 
 .list-table td {
-  padding: 14px 20px;
-  font-size: 13.5px;
+  padding: 13px 16px;
+  font-size: 13px;
   vertical-align: middle;
   color: #334155;
   border-bottom: 1px solid #f1f5f9;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 /* Center any cell that contains a badge or status pill */

@@ -5,6 +5,8 @@ import {
   Lock, AlertTriangle, Image as ImageIcon, Info, CloudUpload, Check,
   Home, FileText
 } from 'lucide-react';
+import api from '../../utils/api';
+import Tesseract from 'tesseract.js';
 import './checkout.css';
 
 const Checkout = () => {
@@ -12,6 +14,19 @@ const Checkout = () => {
   const [selectedMethod, setSelectedMethod] = useState('');
   const [file, setFile] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showInvalidModal, setShowInvalidModal] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState('');
+  const [extractedUtr, setExtractedUtr] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [checkoutData, setCheckoutData] = useState({
+    memberName: '',
+    pgName: '',
+    roomNumber: '',
+    monthlyRent: '',
+    dueDate: '',
+    paymentLinks: null
+  });
 
   useEffect(() => {
     // Inject PWA Manifest for isolated Checkout app
@@ -39,9 +54,152 @@ const Checkout = () => {
     };
   }, []);
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const memberId = urlParams.get('member_id');
+
+    if (!memberId) return;
+
+    const fetchCheckoutData = async () => {
+      setIsLoading(true);
+      
+      let fetchedName = '';
+      let fetchedRent = '';
+      let fetchedPg = '';
+      let fetchedRoom = '';
+      let fetchedDue = '';
+      let fetchedLinks = null;
+
+      // 1. Try to fetch generate-payment-link
+      try {
+        const payRes = await api.get('/api/generate-payment-link/', {
+          params: { member_id: memberId }
+        });
+        if (payRes.data) {
+          const nameFromPay = payRes.data.member_name || payRes.data.full_name || payRes.data.name;
+          if (nameFromPay && nameFromPay !== 'Unknown') {
+            fetchedName = nameFromPay;
+          }
+          fetchedRent = payRes.data.rent_amount || payRes.data.monthly_rent || payRes.data.rent || '';
+          fetchedLinks = payRes.data.payment_links || payRes.data.links || payRes.data;
+        }
+      } catch (err) {
+        console.warn("Could not fetch payment link data:", err);
+      }
+
+      // 2. Try to fetch member details for full_name, PG Name, Room, Due Date
+      try {
+        const memRes = await api.get('/api/members', {
+          params: { member_id: memberId }
+        });
+        const rawData = memRes.data?.data !== undefined ? memRes.data.data : memRes.data;
+        const mData = Array.isArray(rawData) ? (rawData.find(m => String(m.id || m.member_id) === String(memberId)) || rawData[0] || {}) : (rawData || {});
+        
+        if (mData) {
+          const nameFromMember = mData.full_name || mData.name || mData.member_name;
+          if (nameFromMember && nameFromMember !== 'Unknown') {
+            fetchedName = nameFromMember;
+          }
+          if (!fetchedRent) fetchedRent = mData.monthly_rent || mData.rent || mData.rent_amount || '';
+          fetchedPg = mData.pg_name || mData.pg || '-';
+          fetchedRoom = mData.room_number || mData.room_no || mData.room || '-';
+          fetchedDue = mData.rent_due_date || mData.due_date ? `${mData.rent_due_date || mData.due_date}` : '-';
+        }
+      } catch (err) {
+        console.warn("Could not fetch member details:", err);
+      }
+
+      setCheckoutData({
+        memberName: fetchedName || '',
+        pgName: fetchedPg || '-',
+        roomNumber: fetchedRoom || '-',
+        monthlyRent: fetchedRent ? Number(fetchedRent).toLocaleString('en-IN') : '-',
+        dueDate: fetchedDue || '-',
+        paymentLinks: fetchedLinks
+      });
+      setIsLoading(false);
+    };
+
+    fetchCheckoutData();
+  }, []);
+
+  const handlePayRedirect = (method) => {
+    const activeMethod = method || selectedMethod;
+    if (!activeMethod) {
+      alert("Please select a payment method first.");
+      return;
+    }
+    const links = checkoutData.paymentLinks;
+    let targetUrl = null;
+    if (links) {
+      if (activeMethod === 'gpay') {
+        targetUrl = links.google_pay || links.gpay || links.generic_upi;
+      } else if (activeMethod === 'phonepe') {
+        targetUrl = links.phonepe || links.generic_upi;
+      } else if (activeMethod === 'paytm') {
+        targetUrl = links.paytm || links.generic_upi;
+      }
+    }
+    
+    if (targetUrl) {
+      window.location.href = targetUrl;
+    } else {
+      console.log(`Redirecting to default UPI for ${activeMethod}...`);
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const selectedFile = e.target.files[0];
+    const fileInput = e.target;
+
+    setIsScanning(true);
+    setOcrProgress('Reading screenshot image...');
+    setExtractedUtr(null);
+
+    try {
+      const result = await Tesseract.recognize(selectedFile, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            setOcrProgress(`Scanning image (${Math.round((m.progress || 0) * 100)}%)...`);
+          }
+        }
+      });
+
+      const text = result?.data?.text || '';
+      console.log('OCR Scanned Text:', text);
+
+      // Regex patterns for UTR / Transaction ID:
+      // 1. Any 12-digit continuous numeric string (e.g. 423456789012)
+      // 2. 12 digits separated by spaces or dashes (e.g. 4234 5678 9012)
+      // 3. Keywords like UPI Ref / UTR / Txn ID followed by alphanumeric code
+      const digitsMatch = text.match(/\b\d{12}\b/) || text.match(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/);
+      const keywordMatch = text.match(/(?:UPI|Ref|UTR|Txn|Transaction|Reference)\s*[:#-]?\s*([A-Za-z0-9]{8,20})/i);
+
+      let foundUtr = null;
+      if (digitsMatch) {
+        foundUtr = digitsMatch[0].replace(/\s|-/g, '');
+      } else if (keywordMatch && keywordMatch[1]) {
+        foundUtr = keywordMatch[1];
+      }
+
+      if (foundUtr) {
+        setFile(selectedFile);
+        setExtractedUtr(foundUtr);
+      } else {
+        // UTR is not visible in screenshot
+        setFile(null);
+        if (fileInput) fileInput.value = '';
+        setShowInvalidModal(true);
+      }
+    } catch (err) {
+      console.error("OCR scanning failed:", err);
+      setFile(null);
+      if (fileInput) fileInput.value = '';
+      setShowInvalidModal(true);
+    } finally {
+      setIsScanning(false);
+      setOcrProgress('');
     }
   };
 
@@ -87,17 +245,17 @@ const Checkout = () => {
                   <div className="detail-row">
                     <User size={16} className="detail-icon" />
                     <span className="detail-label">Member Name</span>
-                    <span className="detail-value">: Rahul Patel</span>
+                    <span className="detail-value">: {checkoutData.memberName || '-'}</span>
                   </div>
                   <div className="detail-row">
                     <Building2 size={16} className="detail-icon" />
                     <span className="detail-label">PG Name</span>
-                    <span className="detail-value">: Sunshine PG</span>
+                    <span className="detail-value">: {checkoutData.pgName || '-'}</span>
                   </div>
                   <div className="detail-row">
                     <Smartphone size={16} className="detail-icon" />
                     <span className="detail-label">Room Number</span>
-                    <span className="detail-value">: 102</span>
+                    <span className="detail-value">: {checkoutData.roomNumber || '-'}</span>
                   </div>
                 </div>
                 <div className="rent-divider"></div>
@@ -105,12 +263,12 @@ const Checkout = () => {
                   <div className="detail-row">
                     <IndianRupee size={16} className="detail-icon" />
                     <span className="detail-label">Monthly Rent</span>
-                    <span className="detail-value">: ₹6,000</span>
+                    <span className="detail-value">: ₹{checkoutData.monthlyRent || '-'}</span>
                   </div>
                   <div className="detail-row">
                     <Calendar size={16} className="detail-icon" />
                     <span className="detail-label">Due Date</span>
-                    <span className="detail-value">: 05-Aug-2026</span>
+                    <span className="detail-value">: {checkoutData.dueDate || '-'}</span>
                   </div>
                 </div>
               </div>
@@ -165,9 +323,12 @@ const Checkout = () => {
               </div>
 
               <div className="pay-button-wrap">
-                <button className="pay-button">
+                <button 
+                  className="pay-button"
+                  onClick={() => handlePayRedirect()}
+                >
                   <Lock size={18} />
-                  Pay ₹6,000
+                  Pay ₹{checkoutData.monthlyRent || '6,000'}
                 </button>
               </div>
 
@@ -188,14 +349,29 @@ const Checkout = () => {
               <h3 className="section-title" style={{ marginBottom: '4px' }}>Upload Payment Screenshot</h3>
               <p className="method-subtitle">Upload a clear screenshot of your payment as proof.</p>
               
-              <label className="file-upload-zone" style={{ cursor: 'pointer' }}>
-                <input type="file" style={{ display: 'none' }} onChange={handleFileChange} accept="image/png, image/jpeg" />
+              <label className="file-upload-zone" style={{ cursor: isScanning ? 'wait' : 'pointer', opacity: isScanning ? 0.7 : 1 }}>
+                <input type="file" style={{ display: 'none' }} onChange={handleFileChange} accept="image/png, image/jpeg" disabled={isScanning} />
                 <div className="file-choose-btn">
                   <FileText size={14} />
                   Choose File
                 </div>
-                <span className="file-name-text">{file ? file.name : 'No file chosen'}</span>
+                <span className="file-name-text">{file ? file.name : (isScanning ? 'Analyzing screenshot...' : 'No file chosen')}</span>
               </label>
+
+              {isScanning && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', color: '#0369a1', marginBottom: '12px' }}>
+                  <div className="pf-spin" style={{ display: 'inline-block' }}>⚙️</div>
+                  <span>{ocrProgress || 'OCR scanning screenshot for Transaction ID...'}</span>
+                </div>
+              )}
+
+              {extractedUtr && !isScanning && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12.5px', color: '#15803d', fontWeight: '500', marginBottom: '12px' }}>
+                  <Check size={16} />
+                  <span>Transaction ID / UTR Detected: <strong>{extractedUtr}</strong></span>
+                </div>
+              )}
+
               <div className="file-hint">Accepted formats: JPG, JPEG, PNG • Max size: 5MB</div>
 
               <div className="secure-alert" style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#334155', marginBottom: '24px' }}>
@@ -204,9 +380,9 @@ const Checkout = () => {
               </div>
 
               <button 
-                className={`submit-payment-btn ${selectedMethod && file ? 'active' : ''}`}
+                className={`submit-payment-btn ${selectedMethod && file && !isScanning ? 'active' : ''}`}
                 onClick={handleSubmit}
-                disabled={!selectedMethod || !file}
+                disabled={!selectedMethod || !file || isScanning}
               >
                 <CloudUpload size={18} />
                 Submit Payment
@@ -225,6 +401,32 @@ const Checkout = () => {
       
       {/* Spacer for bottom grey area from design */}
       <div className="checkout-page-footer"></div>
+
+      {/* Invalid Screenshot Error Modal */}
+      {showInvalidModal && (
+        <div className="modal-overlay">
+          <div className="success-modal-content" style={{ borderColor: '#fca5a5' }}>
+            <div className="success-icon-wrap" style={{ background: '#fee2e2', color: '#dc2626' }}>
+              <AlertTriangle size={28} strokeWidth={2.5} />
+            </div>
+            <h2 className="success-title" style={{ color: '#991b1b', marginTop: '12px' }}>Transaction ID Not Visible</h2>
+            <p className="success-subtitle" style={{ marginBottom: '16px' }}>OCR Validation Failed</p>
+            
+            <div className="success-divider"></div>
+            
+            <p className="success-text" style={{ fontSize: '14px', lineHeight: '1.6' }}>
+              The <strong>Transaction ID / UTR number</strong> is not clearly visible in this photo.
+            </p>
+            <p className="success-text" style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>
+              Please upload a clear payment screenshot where the <strong>12-digit UTR</strong> or <strong>Transaction ID</strong> is readable.
+            </p>
+            
+            <button className="close-btn" style={{ background: '#dc2626', marginTop: '20px' }} onClick={() => setShowInvalidModal(false)}>
+              Upload Clear Screenshot
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Success Modal */}
       {showSuccessModal && (

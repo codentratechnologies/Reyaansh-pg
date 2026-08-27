@@ -211,7 +211,7 @@ const MemberRegistration = () => {
         status: formData.status,
         device_code: formData.deviceModel
       };
-      
+
       if (formData.pgType === 'PG') payload.bed_id = formData.bed;
       if (formData.status === 'Notice Period') payload.status_reason = formData.reason;
       if (formData.altMobile) payload.alternate_mobile_number = formData.altMobile;
@@ -221,7 +221,24 @@ const MemberRegistration = () => {
       if (formData.addressLine2) payload.address_line_2 = formData.addressLine2;
       if (fcmToken) payload.fcm_token = fcmToken;
 
-      await api.post('/api/members', payload);
+      // Step 1: Save the member
+      const memberRes = await api.post('/api/members', payload);
+      const memberId = memberRes.data?.member_id || memberRes.data?.id || memberRes.data?.data?.member_id;
+
+      // Step 2: Fire calendar invite (fire-and-forget — won't block navigation)
+      if (memberId) {
+        const checkoutUrl = `https://reyaansh-pg.vercel.app/checkout?member_id=${memberId}`;
+        api.post('/api/send-calendar-reminder/', {
+          member_id: memberId,
+          title: 'Monthly Rent Due',
+          description: 'Please remember to pay your rent! Your timely payment is appreciated.',
+          checkout_url: checkoutUrl,
+        }).catch((err) => {
+          // Log but don't block — member was saved successfully
+          console.warn('Calendar invite failed (non-blocking):', err?.response?.data || err.message);
+        });
+      }
+
       navigate('/member-management');
     } catch (err) {
       console.error("Failed to add member:", err);
