@@ -1,9 +1,9 @@
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
     event.notification.close();
-    
+
     // Firebase hides the custom data in different places depending on the payload
     let targetUrl = "https://gossip-huntress-clambake.ngrok-free.dev/checkout"; // Default fallback
-    
+
     if (event.notification.data) {
         if (event.notification.data.url) {
             targetUrl = event.notification.data.url;
@@ -29,3 +29,4 @@ self.addEventListener('notificationclick', function(event) {
         })
     );
 });
+
