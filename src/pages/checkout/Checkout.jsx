@@ -28,6 +28,8 @@ const Checkout = () => {
     paymentLinks: null
   });
 
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   useEffect(() => {
     // Inject PWA Manifest for isolated Checkout app
     const link = document.createElement('link');
@@ -204,8 +206,8 @@ const Checkout = () => {
   };
 
   const handleSubmit = () => {
-    if (selectedMethod && file) {
-      setShowSuccessModal(true);
+    if (file && !isScanning) {
+      setIsSubmitted(true);
     }
   };
 
@@ -380,9 +382,9 @@ const Checkout = () => {
               </div>
 
               <button 
-                className={`submit-payment-btn ${selectedMethod && file && !isScanning ? 'active' : ''}`}
+                className={`submit-payment-btn ${file && !isScanning ? 'active' : ''}`}
                 onClick={handleSubmit}
-                disabled={!selectedMethod || !file || isScanning}
+                disabled={!file || isScanning}
               >
                 <CloudUpload size={18} />
                 Submit Payment
@@ -428,29 +430,59 @@ const Checkout = () => {
         </div>
       )}
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="modal-overlay">
-          <div className="success-modal-content">
-            <div className="success-icon-wrap">
-              <Check size={28} strokeWidth={3} />
+      {/* Thank You / Greeting Page after submission */}
+      {isSubmitted && (
+        <div className="modal-overlay" style={{ background: '#f8fafc' }}>
+          <div className="checkout-container" style={{ textAlign: 'center', padding: '48px 32px', margin: '20px', maxWidth: '560px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+            <div style={{ width: '72px', height: '72px', background: '#d1fae5', color: '#059669', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}>
+              <Check size={40} strokeWidth={3} />
             </div>
-            <h2 className="success-title">Payment Submitted Successfully</h2>
-            <p className="success-subtitle">Thank you for your payment.</p>
-            
-            <div className="success-divider"></div>
-            
-            <p className="success-text">Your payment has been submitted successfully.</p>
-            <p className="success-text">Payment Status : <span className="status-highlight">In Review</span></p>
-            <p className="success-text">Our team will verify your payment within 48 hours.</p>
-            <p className="success-text">You will receive confirmation once verification is completed.</p>
-            
-            <button className="close-btn" onClick={() => {
-              setShowSuccessModal(false);
-              navigate('/');
-            }}>
-              Close
-            </button>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', margin: '0 0 8px' }}>
+              Payment Received & In Review! 🎉
+            </h1>
+            <p style={{ fontSize: '14.5px', color: '#475569', margin: '0 0 24px', lineHeight: '1.5' }}>
+              Thank you, <strong>{checkoutData.memberName || 'Tenant'}</strong>! We have received your rent payment proof and it is currently being verified.
+            </p>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', margin: '0 auto 24px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+                <span style={{ color: '#64748b' }}>Member Name:</span>
+                <strong style={{ color: '#0f172a' }}>{checkoutData.memberName || '-'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+                <span style={{ color: '#64748b' }}>PG Name:</span>
+                <strong style={{ color: '#0f172a' }}>{checkoutData.pgName || '-'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+                <span style={{ color: '#64748b' }}>Room Number:</span>
+                <strong style={{ color: '#0f172a' }}>{checkoutData.roomNumber || '-'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+                <span style={{ color: '#64748b' }}>Amount Paid:</span>
+                <strong style={{ color: '#1d4ed8' }}>₹{checkoutData.monthlyRent || '-'}</strong>
+              </div>
+              {extractedUtr && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+                  <span style={{ color: '#64748b' }}>Verified UTR / Ref No:</span>
+                  <strong style={{ color: '#059669' }}>{extractedUtr}</strong>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '13.5px' }}>
+                <span style={{ color: '#64748b' }}>Payment Status:</span>
+                <span style={{ background: '#fef3c7', color: '#d97706', padding: '2px 10px', borderRadius: '12px', fontWeight: '600', fontSize: '12px' }}>
+                  ● In Review
+                </span>
+              </div>
+            </div>
+
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', color: '#1e40af', fontSize: '13px', margin: '0 auto 24px', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left' }}>
+              <Info size={18} color="#1d4ed8" style={{ flexShrink: 0 }} />
+              <span>Our admin team will verify your transaction against bank records within 24-48 hours.</span>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0' }}>
+              You may safely close this tab now.
+            </p>
           </div>
         </div>
       )}

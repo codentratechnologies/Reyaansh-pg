@@ -5,7 +5,7 @@ import {
   UserPlus, User, Phone, PhoneCall, Mail, Briefcase, Calendar, Building,
   CreditCard, CloudUpload, ShieldAlert, Home, MapPin, Map, Hash,
   BedDouble, Bed, Key, IndianRupee, Clock, ShieldCheck, FileText, ChevronRight,
-  ArrowLeft, X, Save
+  ArrowLeft, X, Save, Check, Info
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import CustomSelect from '../../components/common/CustomSelect';
@@ -17,6 +17,7 @@ import { generateToken } from '../../utils/firebase';
 const MemberRegistration = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(null);
   
   // Availability Data
@@ -239,7 +240,7 @@ const MemberRegistration = () => {
         });
       }
 
-      navigate('/member-management');
+      setIsSubmitted(true);
     } catch (err) {
       console.error("Failed to add member:", err);
       const errorMessage = err.response?.data?.detail || err.response?.data?.message || err.message || "Unknown error";
@@ -314,6 +315,74 @@ const MemberRegistration = () => {
   const pgOptions = availabilityData.map(pg => ({ value: pg.pg_id || pg.id, label: pg.name || pg.pg_name }));
   const roomOptions = availableRooms.map(r => ({ value: r.room_id || r.id, label: r.room_number || r.flat_no || r.room_name }));
   const bedOptions = availableBeds.map(b => ({ value: b.bed_id || b.id, label: b.bed_name || b.bed_number }));
+
+  if (isSubmitted) {
+    const selectedPgObj = pgOptions.find(p => p.value === formData.pgName);
+    const pgLabel = selectedPgObj ? selectedPgObj.label : (formData.pgName || 'Reyaansh PG');
+    const selectedRoomObj = roomOptions.find(r => r.value === formData.roomNumber);
+    const roomLabel = selectedRoomObj ? selectedRoomObj.label : (formData.roomNumber || '-');
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '48px 32px', margin: '20px', maxWidth: '560px', width: '100%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+          
+          <div style={{ width: '72px', height: '72px', background: '#d1fae5', color: '#059669', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}>
+            <Check size={40} strokeWidth={3} />
+          </div>
+
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#065f46', margin: '0 0 8px' }}>
+            Registration Successful! 🎉
+          </h1>
+
+          <p style={{ fontSize: '14.5px', color: '#475569', margin: '0 0 24px', lineHeight: '1.5' }}>
+            Welcome to <strong>Reyaansh PG</strong>, <strong>{formData.fullName || 'Member'}</strong>! Your registration details have been submitted.
+          </p>
+
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', margin: '0 auto 24px', textAlign: 'left' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+              <span style={{ color: '#64748b' }}>Full Name:</span>
+              <strong style={{ color: '#0f172a' }}>{formData.fullName}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+              <span style={{ color: '#64748b' }}>Mobile:</span>
+              <strong style={{ color: '#0f172a' }}>{formData.mobile}</strong>
+            </div>
+            {formData.email && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+                <span style={{ color: '#64748b' }}>Email:</span>
+                <strong style={{ color: '#0f172a' }}>{formData.email}</strong>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+              <span style={{ color: '#64748b' }}>PG Property:</span>
+              <strong style={{ color: '#0f172a' }}>{pgLabel}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+              <span style={{ color: '#64748b' }}>Room / Flat No.:</span>
+              <strong style={{ color: '#0f172a' }}>{roomLabel}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13.5px' }}>
+              <span style={{ color: '#64748b' }}>Monthly Rent:</span>
+              <strong style={{ color: '#1d4ed8' }}>₹{formData.monthlyRent ? Number(formData.monthlyRent).toLocaleString('en-IN') : '-'}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '13.5px' }}>
+              <span style={{ color: '#64748b' }}>Rent Due Date:</span>
+              <strong style={{ color: '#0f172a' }}>Day {formData.rentDueDate || '-'} of every month</strong>
+            </div>
+          </div>
+
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', color: '#1e40af', fontSize: '13px', margin: '0 auto 24px', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left' }}>
+            <Info size={18} color="#1d4ed8" style={{ flexShrink: 0 }} />
+            <span>A monthly rent reminder calendar invite has been sent to your device.</span>
+          </div>
+
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0' }}>
+            You may safely close this browser tab now.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
