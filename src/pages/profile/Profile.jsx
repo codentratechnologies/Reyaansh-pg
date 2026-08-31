@@ -26,20 +26,36 @@ const Profile = () => {
 
   const [draft, setDraft] = useState({ ...formData });
 
-  // ── Load existing data via PUT on mount ────────────
+  // ── Load existing data via fetch() on mount ───────────
   useEffect(() => {
     const loadProfile = async () => {
       setIsLoading(true);
       try {
-        // Call PUT with empty body — backend returns current profile data
-        const res = await api.put('/api/admin-profile/', {});
-        const data = res.data || {};
+        const token = localStorage.getItem('access_token');
+        const headers = {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch('/api/admin-profile/', {
+          method: 'GET',
+          headers: headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
         const loaded = {
-          firstName: data.first_name || data.firstName || '',
-          lastName:  data.last_name  || data.lastName  || '',
-          email:     data.email      || '',
-          phone:     data.phone      || data.mobile    || '',
-          location:  data.location   || data.city      || '',
+          firstName: data.name || data.first_name || data.firstName || '',
+          lastName: data.last_name || data.lastName || '',
+          email: data.email || '',
+          phone: data.phone_number || data.phone || data.mobile || '',
+          location: data.location || data.city || '',
         };
         setFormData(loaded);
         setDraft(loaded);
@@ -65,27 +81,47 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  // ── Save via PUT /api/admin-profile/ ───────────────
+  // ── Save via fetch() PUT /api/admin-profile/ ───────────
   const handleSave = async () => {
     setIsSaving(true);
     setError('');
     try {
-      const payload = {
-        first_name: draft.firstName,
-        last_name:  draft.lastName,
-        email:      draft.email,
-        phone:      draft.phone,
-        location:   draft.location,
+      const token = localStorage.getItem('access_token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       };
-      const res = await api.put('/api/admin-profile/', payload);
-      // Update formData from the response if backend returns updated data
-      const data = res.data || {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const payload = {
+        name: draft.firstName,
+        last_name: draft.lastName,
+        email: draft.email,
+        phone_number: draft.phone,
+        location: draft.location,
+      };
+
+      const response = await fetch('/api/admin-profile/', {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const msg = errData.detail || errData.message || Object.values(errData)[0] || 'Failed to save.';
+        throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      }
+
+      const data = await response.json().catch(() => ({}));
       const updated = {
-        firstName: data.first_name || draft.firstName,
-        lastName:  data.last_name  || draft.lastName,
-        email:     data.email      || draft.email,
-        phone:     data.phone      || draft.phone,
-        location:  data.location   || draft.location,
+        firstName: data.name || data.first_name || draft.firstName,
+        lastName: data.last_name || draft.lastName,
+        email: data.email || draft.email,
+        phone: data.phone_number || data.phone || draft.phone,
+        location: data.location || draft.location,
       };
       setFormData(updated);
       setSaved(true);
@@ -93,11 +129,7 @@ const Profile = () => {
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Failed to update profile:', err);
-      const msg = err.response?.data?.detail
-        || err.response?.data?.message
-        || Object.values(err.response?.data || {})[0]
-        || 'Failed to save. Please try again.';
-      setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      setError(err.message || 'Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -150,8 +182,8 @@ const Profile = () => {
                   <span className="profile-status-badge">● Active</span>
                 </div>
                 <div className="profile-meta-chips">
-                  {formData.email    && <span className="profile-chip"><Mail size={12} /> {formData.email}</span>}
-                  {formData.phone    && <span className="profile-chip"><Phone size={12} /> {formData.phone}</span>}
+                  {formData.email && <span className="profile-chip"><Mail size={12} /> {formData.email}</span>}
+                  {formData.phone && <span className="profile-chip"><Phone size={12} /> {formData.phone}</span>}
                   {formData.location && <span className="profile-chip"><MapPin size={12} /> {formData.location}</span>}
                 </div>
               </>
@@ -206,10 +238,10 @@ const Profile = () => {
             </div>
           ) : (
             <>
-          <div className="pf-row-2">
+              <div className="pf-row-2">
                 {[
                   { label: 'First Name', name: 'firstName' },
-                  { label: 'Last Name',  name: 'lastName'  },
+                  { label: 'Last Name', name: 'lastName' },
                 ].map(({ label, name }) => (
                   <div className="pf-group" key={name}>
                     <label className="pf-label">{label}</label>
@@ -222,9 +254,9 @@ const Profile = () => {
               </div>
 
               {[
-                { label: 'Email Address', name: 'email',    icon: <Mail size={16} />,   type: 'email' },
-                { label: 'Phone Number',  name: 'phone',    icon: <Phone size={16} />,  type: 'tel'   },
-                { label: 'Location',      name: 'location', icon: <MapPin size={16} />, type: 'text'  },
+                { label: 'Email Address', name: 'email', icon: <Mail size={16} />, type: 'email' },
+                { label: 'Phone Number', name: 'phone', icon: <Phone size={16} />, type: 'tel' },
+                { label: 'Location', name: 'location', icon: <MapPin size={16} />, type: 'text' },
               ].map(({ label, name, icon, type }) => (
                 <div className="pf-group" key={name}>
                   <label className="pf-label">{label}</label>
