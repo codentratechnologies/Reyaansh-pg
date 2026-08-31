@@ -205,9 +205,32 @@ const Checkout = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (file && !isScanning) {
-      setIsSubmitted(true);
+      setIsLoading(true);
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const memberId = urlParams.get('member_id');
+
+        const formData = new FormData();
+        if (memberId) formData.append('member_id', memberId);
+        if (extractedUtr) formData.append('transaction_id', extractedUtr);
+        if (selectedMethod) formData.append('payment_method', selectedMethod);
+        formData.append('proof_image', file);
+
+        await api.post('/api/submit-payment-proof/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        setIsSubmitted(true);
+      } catch (err) {
+        console.error("Failed to submit payment proof:", err);
+        alert("Failed to submit payment proof. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -384,10 +407,10 @@ const Checkout = () => {
               <button 
                 className={`submit-payment-btn ${file && !isScanning ? 'active' : ''}`}
                 onClick={handleSubmit}
-                disabled={!file || isScanning}
+                disabled={!file || isScanning || isLoading}
               >
                 <CloudUpload size={18} />
-                Submit Payment
+                {isLoading ? 'Submitting...' : 'Submit Payment'}
               </button>
 
             </div>
