@@ -128,9 +128,25 @@ const MemberManagement = () => {
     }
   };
 
-  const handleUploadSubmit = () => {
-    console.log('Uploaded statement');
-    setIsUploadModalOpen(false);
+  const handleUploadSubmit = async (file) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post('/api/upload-payment-statement/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('Uploaded statement successfully');
+      // fetchMembers(pagination.current_page, searchTerm, activeFilters); // Optional: refresh list
+    } catch (err) {
+      console.error('Failed to upload statement:', err);
+      const errorMessage = err.response?.data?.detail || err.message || "Unknown error";
+      setError(`Failed to upload statement. Error: ${errorMessage}`);
+    } finally {
+      setIsUploadModalOpen(false);
+    }
   };
 
   return (
