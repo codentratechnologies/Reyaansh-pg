@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import CustomSelect from '../../components/common/CustomSelect';
+import CustomDatePicker from '../../components/common/CustomDatePicker';
 import '../../assets/dashboard.css';
 import api from '../../utils/api';
 
@@ -152,8 +153,26 @@ const EditMember = () => {
         setAvailableBeds([]);
       } else if (field === 'roomNumber') {
         updated.bed = '';
-        const selectedRoom = availableRooms.find(r => (r.room_id === value || r.room_number === value));
+        const selectedRoom = availableRooms.find(r => (r.room_id === value || r.id === value || r.room_number === value));
         setAvailableBeds(selectedRoom?.available_beds || []);
+
+        const rRent = selectedRoom?.rent || selectedRoom?.monthly_rent || selectedRoom?.rent_amount || selectedRoom?.price || selectedRoom?.room_rent;
+        if (rRent) {
+          updated.monthlyRent = String(rRent);
+        }
+      } else if (field === 'bed') {
+        const selectedBed = availableBeds.find(b => (b.bed_id === value || b.id === value || b.bed_number === value));
+        const bRent = selectedBed?.rent || selectedBed?.monthly_rent || selectedBed?.rent_amount || selectedBed?.price || selectedBed?.bed_rent;
+
+        if (bRent) {
+          updated.monthlyRent = String(bRent);
+        } else {
+          const selectedRoom = availableRooms.find(r => (r.room_id === updated.roomNumber || r.id === updated.roomNumber || r.room_number === updated.roomNumber));
+          const rRent = selectedRoom?.rent || selectedRoom?.monthly_rent || selectedRoom?.rent_amount || selectedRoom?.price || selectedRoom?.room_rent;
+          if (rRent) {
+            updated.monthlyRent = String(rRent);
+          }
+        }
       }
       return updated;
     });
@@ -280,8 +299,31 @@ const EditMember = () => {
     : [];
 
   const pgOptions = availabilityData.map(pg => ({ value: pg.pg_id || pg.id, label: pg.name || pg.pg_name }));
-  const roomOptions = availableRooms.map(r => ({ value: r.room_id || r.id, label: r.room_number || r.flat_no || r.room_name }));
-  const bedOptions = availableBeds.map(b => ({ value: b.bed_id || b.id, label: b.bed_name || b.bed_number }));
+
+  const roomOptions = availableRooms.map(r => {
+    const rentVal = r.rent || r.monthly_rent || r.rent_amount || r.price || r.room_rent;
+    const sharingInfo = r.sharing ? `${r.sharing} Sharing` : (r.bhk ? `${r.bhk} BHK` : '');
+    const rentInfo = rentVal ? `₹${Number(rentVal).toLocaleString('en-IN')}` : '';
+    
+    let extraLabel = '';
+    if (sharingInfo && rentInfo) extraLabel = ` (${sharingInfo} - ${rentInfo})`;
+    else if (sharingInfo) extraLabel = ` (${sharingInfo})`;
+    else if (rentInfo) extraLabel = ` (${rentInfo})`;
+
+    return { 
+      value: r.room_id || r.id || r.room_number, 
+      label: `${r.room_number || r.flat_no || r.room_name}${extraLabel}` 
+    };
+  });
+
+  const bedOptions = availableBeds.map(b => {
+    const rentVal = b.rent || b.monthly_rent || b.rent_amount || b.price || b.bed_rent;
+    const rentInfo = rentVal ? ` - ₹${Number(rentVal).toLocaleString('en-IN')}` : '';
+    return { 
+      value: b.bed_id || b.id || b.bed_number, 
+      label: `${b.bed_name || b.bed_number}${rentInfo}` 
+    };
+  });
 
   if (isLoading) {
     return (
@@ -365,10 +407,13 @@ const EditMember = () => {
 
           <div className="form-group">
             <label className="form-label">Date of Birth <span className="required">*</span></label>
-            <div className="input-with-icon">
-              <div className="input-icon-left"><Calendar size={16} /></div>
-              <input type="text" className="form-input pl-10" value={formData.dob} onChange={(e) => handleTextChange('dob', e.target.value)} />
-            </div>
+            <CustomDatePicker 
+              value={formData.dob} 
+              onChange={(val) => handleTextChange('dob', val)} 
+              placeholder="Select date of birth" 
+              minYear={1940}
+              maxYear={new Date().getFullYear()}
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Gender <span className="required">*</span></label>

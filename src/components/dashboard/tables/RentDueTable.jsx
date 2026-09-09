@@ -18,38 +18,43 @@ const RentDueTable = ({ data = [] }) => {
           <thead>
             <tr>
               <th>Member</th>
-              <th>PG & Room</th>
+              <th>PG</th>
+              <th>Room</th>
               <th>Rent</th>
               <th>Due Date</th>
               <th>Days Left</th>
-              <th>Status</th>
+              <th style={{ textAlign: 'center' }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {(data || []).map((item) => (
-              <tr key={item.rent_id}>
-                <td>
-                  <div className="member-info">
-                    <div className="member-avatar">{getInitials(item.member_name)}</div>
-                    <span>{item.member_name}</span>
-                  </div>
-                </td>
-                <td>
-                  <div className="cell-stack">
-                    <span className="cell-primary">{item.pg_name}</span>
-                    <span className="cell-secondary">Room {item.room_number}</span>
-                  </div>
-                </td>
-                <td><strong>{formatCurrency(item.rent_amount)}</strong></td>
-                <td>{item.due_date}</td>
-                <td>{item.days_left} Days</td>
-                <td>
-                  <span className={`status-badge status-${item.days_left === 0 ? 'red' : 'blue'}`}>
-                    {item.status}
-                  </span>
+            {!data || data.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '32px 16px', color: '#64748b', fontSize: '14px' }}>
+                  No upcoming rent dues at this time.
                 </td>
               </tr>
-            ))}
+            ) : (
+              data.map((item) => (
+                <tr key={item.rent_id}>
+                  <td>
+                    <div className="member-info">
+                      <div className="member-avatar">{getInitials(item.member_name)}</div>
+                      <span>{item.member_name}</span>
+                    </div>
+                  </td>
+                  <td>{item.pg_name}</td>
+                  <td>{item.room_number}</td>
+                  <td><strong>{formatCurrency(item.rent_amount)}</strong></td>
+                  <td>{item.due_date}</td>
+                  <td>{item.days_left} Days</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className={`status-badge status-${item.days_left === 0 ? 'red' : 'blue'}`}>
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 
@@ -116,14 +116,6 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="row-options">
-          <label className="remember">
-            <input type="checkbox" defaultChecked />
-            <span>Remember me</span>
-          </label>
-          <Link to="/forgot-password" className="forgot">Forgot Password?</Link>
-        </div>
-
         <button type="submit" className="login-btn" disabled={isLoading} style={{ opacity: isLoading ? 0.7 : 1 }}>
           {isLoading ? (
             'Logging in...'
@@ -138,10 +130,6 @@ const Login = () => {
           )}
         </button>
       </form>
-
-      <div className="or-divider">
-        <span>OR</span>
-      </div>
 
       <div className="card-footer">
         <div className="ssl">

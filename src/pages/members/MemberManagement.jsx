@@ -3,7 +3,6 @@ import {
   Search, 
   Filter, 
   ArrowUpDown, 
-  RotateCcw,
   Plus,
   Upload,
   IndianRupee,
@@ -186,7 +185,6 @@ const MemberManagement = () => {
                 <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#3b82f6', width: '8px', height: '8px', borderRadius: '50%' }}></span>
               )}
             </Button>
-            <Button variant="outline" icon={<RotateCcw size={16} />} onClick={() => { setSearchTerm(''); setActiveFilters({pg_name: '', rent_status: '', gender: '', member_status: '', city: ''}); fetchMembers(1, '', {pg_name: '', rent_status: '', gender: '', member_status: '', city: ''}); }}>Reset</Button>
           </div>
         </div>
 
@@ -209,9 +207,9 @@ const MemberManagement = () => {
                 <th>Bed <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Monthly Rent <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Due Date <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Rent Status <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Member Status <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Rent Status <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th style={{ textAlign: 'center' }}>Member Status <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -247,17 +245,17 @@ const MemberManagement = () => {
                       <td>{member.bed_name}</td>
                       <td>₹ {member.monthly_rent}</td>
                       <td>{member.due_date}</td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className={`badge-status-${rentStatus.toLowerCase()}`}>
                           {rentStatus}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className={`badge-status-${memberStatus.toLowerCase().replace(' ', '-')}`}>
                           {memberStatus}
                         </span>
                       </td>
-                      <td className="actions-cell">
+                      <td className="actions-cell" style={{ textAlign: 'center' }}>
                         <TableActions 
                           customAction={
                             <button className="action-icon-btn verify-btn" title="Verify Payment">

@@ -173,12 +173,12 @@ const PgManagement = () => {
               <tr>
                 <th>Code <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>PG Name <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>PG Type <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th style={{ textAlign: 'center' }}>PG Type <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Living Type <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Contact Person <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th>Mobile <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Status <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Status <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -213,7 +213,7 @@ const PgManagement = () => {
                           <span className="font-semibold text-slate-800">{pg.pg_name}</span>
                         </div>
                       </td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className={`type-badge ${isPg ? 'type-pg' : 'type-apt'}`}>
                           {pg.pg_type}
                         </span>
@@ -226,13 +226,13 @@ const PgManagement = () => {
                         </div>
                       </td>
                       <td className="text-slate-800 font-semibold">{pg.mobile}</td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className={`status-badge-outline ${isActive ? 'status-outline-green' : 'status-outline-red'}`} style={{ textTransform: 'capitalize' }}>
                           <span className="status-dot"></span>
                           {pg.status || 'Inactive'}
                         </span>
                       </td>
-                      <td className="actions-cell">
+                      <td className="actions-cell" style={{ textAlign: 'center' }}>
                         <TableActions 
                           onView={() => navigate(`/pg-management/view/${pg.pg_id}`)}
                           onEdit={() => navigate(`/pg-management/edit/${pg.pg_id}`)}

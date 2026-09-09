@@ -25,14 +25,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // Keep a reference to the token if the API needs it
+    const currentToken = localStorage.getItem('access_token');
+    
+    // Instantly clear client-side state so UI updates immediately
+    setToken(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
     try {
-      await api.post('/api/logout');
+      await api.post('/api/logout', {}, {
+        headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : {}
+      });
     } catch (error) {
       console.error('Logout API failed:', error);
-    } finally {
-      setToken(null);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
     }
   };
 

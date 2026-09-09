@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, RotateCcw, Building2, BedDouble, Users, PieChart, Wallet, Receipt } from 'lucide-react';
+import { Filter, Building2, BedDouble, Users, PieChart, Wallet, Receipt } from 'lucide-react';
 import StatCard from '../../components/dashboard/StatCard';
 import api from '../../utils/api';
 
@@ -72,10 +72,6 @@ const Dashboard = () => {
             {Object.values(activeFilters).some(v => v !== '') && (
               <span style={{ position: 'absolute', top: '6px', right: '6px', background: '#dc2626', width: '8px', height: '8px', borderRadius: '50%' }}></span>
             )}
-          </button>
-          <button className="action-btn" onClick={() => setActiveFilters({})} title="Reset">
-            <RotateCcw size={16} />
-            <span className="hide-on-mobile">Reset</span>
           </button>
         </div>
       </div>

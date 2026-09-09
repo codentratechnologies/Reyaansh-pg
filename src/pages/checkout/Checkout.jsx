@@ -235,24 +235,24 @@ const Checkout = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflowY: 'auto', background: '#f8fafc' }}>
+    <div className="checkout-page-root">
       <div className="checkout-page-wrapper">
         <div className="checkout-container">
           
           {/* Header */}
           <div className="checkout-header">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '12px' }}>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8' }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="checkout-header-badge">
+              <div className="checkout-icon-badge">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 </svg>
-                <IndianRupee size={16} strokeWidth={2.5} style={{ position: 'absolute', marginTop: '4px' }} />
+                <IndianRupee size={15} strokeWidth={2.5} style={{ position: 'absolute', marginTop: '4px' }} />
               </div>
-              <h1 className="checkout-title" style={{ margin: 0 }}>Monthly Rent Payment</h1>
+              <h1 className="checkout-title">Monthly Rent Payment</h1>
             </div>
             <p className="checkout-subtitle">Secure payment link for your rent. Complete your payment below.</p>
-            <div className="secure-alert pill" style={{ border: '1px solid #bfdbfe' }}>
-              <ShieldCheck size={16} />
+            <div className="secure-alert pill">
+              <ShieldCheck size={16} style={{ flexShrink: 0 }} />
               <span>This is a secure payment link. Do not share it with anyone.</span>
             </div>
           </div>
@@ -265,36 +265,45 @@ const Checkout = () => {
                 <FileText size={18} color="#1d4ed8" />
                 <h3 className="section-title">Rent Details</h3>
               </div>
-              <div className="rent-details-grid-custom">
-                <div className="rent-col">
-                  <div className="detail-row">
+              <div className="rent-details-card">
+                <div className="detail-item">
+                  <div className="detail-item-left">
                     <User size={16} className="detail-icon" />
                     <span className="detail-label">Member Name</span>
-                    <span className="detail-value">: {checkoutData.memberName || '-'}</span>
                   </div>
-                  <div className="detail-row">
+                  <span className="detail-value">{checkoutData.memberName || '-'}</span>
+                </div>
+
+                <div className="detail-item">
+                  <div className="detail-item-left">
                     <Building2 size={16} className="detail-icon" />
                     <span className="detail-label">PG Name</span>
-                    <span className="detail-value">: {checkoutData.pgName || '-'}</span>
                   </div>
-                  <div className="detail-row">
+                  <span className="detail-value">{checkoutData.pgName || '-'}</span>
+                </div>
+
+                <div className="detail-item">
+                  <div className="detail-item-left">
                     <Smartphone size={16} className="detail-icon" />
                     <span className="detail-label">Room Number</span>
-                    <span className="detail-value">: {checkoutData.roomNumber || '-'}</span>
                   </div>
+                  <span className="detail-value">{checkoutData.roomNumber || '-'}</span>
                 </div>
-                <div className="rent-divider"></div>
-                <div className="rent-col">
-                  <div className="detail-row">
+
+                <div className="detail-item">
+                  <div className="detail-item-left">
                     <IndianRupee size={16} className="detail-icon" />
                     <span className="detail-label">Monthly Rent</span>
-                    <span className="detail-value">: ₹{checkoutData.monthlyRent || '-'}</span>
                   </div>
-                  <div className="detail-row">
+                  <span className="detail-value rent-highlight">₹{checkoutData.monthlyRent || '-'}</span>
+                </div>
+
+                <div className="detail-item">
+                  <div className="detail-item-left">
                     <Calendar size={16} className="detail-icon" />
                     <span className="detail-label">Due Date</span>
-                    <span className="detail-value">: {checkoutData.dueDate || '-'}</span>
                   </div>
+                  <span className="detail-value">{checkoutData.dueDate || '-'}</span>
                 </div>
               </div>
             </div>
@@ -310,8 +319,8 @@ const Checkout = () => {
                   <div className="method-radio">
                     <div className="method-radio-inner"></div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    <img src="/Gpay.png" alt="Google Pay" style={{ height: '20px', objectFit: 'contain' }} />
+                  <div className="method-logo-wrap">
+                    <img src="/Gpay.png" alt="Google Pay" />
                   </div>
                   <div className="method-info">
                     <span className="method-name">Google Pay</span>
@@ -323,8 +332,8 @@ const Checkout = () => {
                   <div className="method-radio">
                     <div className="method-radio-inner"></div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    <img src="/Phonepay.png" alt="PhonePe" style={{ height: '24px', objectFit: 'contain' }} />
+                  <div className="method-logo-wrap">
+                    <img src="/Phonepay.png" alt="PhonePe" />
                   </div>
                   <div className="method-info">
                     <span className="method-name">PhonePe</span>
@@ -336,8 +345,8 @@ const Checkout = () => {
                   <div className="method-radio">
                     <div className="method-radio-inner"></div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    <img src="/paytm.png" alt="Paytm" style={{ height: '36px', objectFit: 'contain' }} />
+                  <div className="method-logo-wrap">
+                    <img src="/paytm.png" alt="Paytm" />
                   </div>
                   <div className="method-info">
                     <span className="method-name">Paytm</span>
@@ -384,14 +393,14 @@ const Checkout = () => {
               </label>
 
               {isScanning && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', color: '#0369a1', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', fontSize: '12.5px', color: '#0369a1', marginBottom: '12px' }}>
                   <div className="pf-spin" style={{ display: 'inline-block' }}>⚙️</div>
                   <span>{ocrProgress || 'OCR scanning screenshot for Transaction ID...'}</span>
                 </div>
               )}
 
               {extractedUtr && !isScanning && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '12.5px', color: '#15803d', fontWeight: '500', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '12.5px', color: '#15803d', fontWeight: '600', marginBottom: '12px' }}>
                   <Check size={16} />
                   <span>Transaction ID / UTR Detected: <strong>{extractedUtr}</strong></span>
                 </div>
@@ -399,8 +408,8 @@ const Checkout = () => {
 
               <div className="file-hint">Accepted formats: JPG, JPEG, PNG • Max size: 5MB</div>
 
-              <div className="secure-alert" style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#334155', marginBottom: '24px' }}>
-                <Info size={16} color="#1d4ed8" />
+              <div className="secure-alert" style={{ background: '#f8fafc', borderColor: '#e2e8f0', color: '#334155', marginBottom: '20px', borderRadius: '10px' }}>
+                <Info size={16} color="#1d4ed8" style={{ flexShrink: 0 }} />
                 <span style={{ color: '#1d4ed8' }}>Make sure Transaction ID is clearly visible in the screenshot.</span>
               </div>
 
@@ -422,10 +431,10 @@ const Checkout = () => {
 
           </div>
         </div>
+        <div className="checkout-footer-text">
+          Powered by Reyaansh PG Management • 100% Secure Payment Link
+        </div>
       </div>
-      
-      {/* Spacer for bottom grey area from design */}
-      <div className="checkout-page-footer"></div>
 
       {/* Invalid Screenshot Error Modal */}
       {showInvalidModal && (

@@ -26,8 +26,8 @@ const AuthLayout = ({ children }) => {
             With <span>Complete Control</span>
           </h1>
           <p className="hero-sub">
-            Manage tenants, rooms, rent collection,<br />
-            maintenance, reports and operations<br />
+            Manage multiple PGs, rooms, members,<br />
+            and rent collections seamlessly<br />
             from one secure dashboard.
           </p>
         </div>

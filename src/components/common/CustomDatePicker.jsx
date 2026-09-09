@@ -1,24 +1,68 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import '../../assets/dashboard.css';
 
-const CustomDatePicker = ({ value, onChange, placeholder = "Select Date", alignRight = false }) => {
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+const CustomDatePicker = ({
+  value,
+  onChange,
+  placeholder = 'Select date',
+  icon: Icon = Calendar,
+  className = '',
+  error = false,
+  minYear = 1940,
+  maxYear = new Date().getFullYear()
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const dropdownRef = useRef(null);
+  const [openUpward, setOpenUpward] = useState(false);
+  const containerRef = useRef(null);
 
-  // Initialize currentDate from value if available
-  useEffect(() => {
-    if (value) {
-      const [year, month, day] = value.split('-');
-      if (year && month && day) {
-        setCurrentDate(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)));
-      }
+  // Parse initial or current value (expected format YYYY-MM-DD)
+  const initialDate = useMemo(() => {
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map(Number);
+      return { year: y, month: m - 1, day: d };
     }
+    return null;
   }, [value]);
 
+  const [viewYear, setViewYear] = useState(initialDate?.year || 2000);
+  const [viewMonth, setViewMonth] = useState(initialDate?.month ?? new Date().getMonth());
+
+  // Update view when value changes
+  useEffect(() => {
+    if (initialDate) {
+      setViewYear(initialDate.year);
+      setViewMonth(initialDate.month);
+    }
+  }, [initialDate]);
+
+  // Position detection (Upward vs Downward) with safe viewport top margin
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const popupHeight = 360;
+
+      // Only open upward if space below is constrained AND top space is abundant (> 400px)
+      if (spaceBelow < popupHeight && rect.top > 400) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+      }
+    }
+  }, [isOpen]);
+
+  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
@@ -26,154 +70,236 @@ const CustomDatePicker = ({ value, onChange, placeholder = "Select Date", alignR
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+  // Generate Year options (descending e.g. 2026 down to 1940 for quick DOB pick)
+  const yearOptions = useMemo(() => {
+    const years = [];
+    for (let y = maxYear; y >= minYear; y--) {
+      years.push(y);
+    }
+    return years;
+  }, [minYear, maxYear]);
 
-  const handlePrevMonth = (e) => {
-    e.stopPropagation();
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  // Calendar Day Generation
+  const daysGrid = useMemo(() => {
+    const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+    const grid = [];
+
+    // Previous Month Filler Days
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      grid.push({
+        day: daysInPrevMonth - i,
+        isCurrentMonth: false,
+        year: viewMonth === 0 ? viewYear - 1 : viewYear,
+        month: viewMonth === 0 ? 11 : viewMonth - 1
+      });
+    }
+
+    // Current Month Days
+    for (let d = 1; d <= daysInMonth; d++) {
+      grid.push({
+        day: d,
+        isCurrentMonth: true,
+        year: viewYear,
+        month: viewMonth
+      });
+    }
+
+    // Next Month Filler Days (to complete 6 rows = 42 cells)
+    const remaining = 42 - grid.length;
+    for (let d = 1; d <= remaining; d++) {
+      grid.push({
+        day: d,
+        isCurrentMonth: false,
+        year: viewMonth === 11 ? viewYear + 1 : viewYear,
+        month: viewMonth === 11 ? 0 : viewMonth + 1
+      });
+    }
+
+    return grid;
+  }, [viewYear, viewMonth]);
+
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(prev => Math.max(prev - 1, minYear));
+    } else {
+      setViewMonth(prev => prev - 1);
+    }
   };
 
-  const handleNextMonth = (e) => {
-    e.stopPropagation();
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(prev => Math.min(prev + 1, maxYear));
+    } else {
+      setViewMonth(prev => prev + 1);
+    }
   };
 
-  const handleDateClick = (day) => {
-    const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const dayStr = String(day).padStart(2, '0');
-    onChange(`${year}-${month}-${dayStr}`);
+  const handleSelectDay = (cell) => {
+    const formattedMonth = String(cell.month + 1).padStart(2, '0');
+    const formattedDay = String(cell.day).padStart(2, '0');
+    const dateStr = `${cell.year}-${formattedMonth}-${formattedDay}`;
+    onChange(dateStr);
     setIsOpen(false);
   };
 
-  const renderCalendar = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-    const days = [];
-
-    // Empty cells for days before the 1st
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} style={{ width: '32px', height: '32px' }} />);
-    }
-
-    // Days of the month
-    for (let d = 1; d <= daysInMonth; d++) {
-      const isSelected = value === `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
-
-      days.push(
-        <button
-          key={d}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDateClick(d);
-          }}
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            border: 'none',
-            background: isSelected ? '#1d4ed8' : (isToday ? '#eff6ff' : 'transparent'),
-            color: isSelected ? 'white' : (isToday ? '#1d4ed8' : '#334155'),
-            fontWeight: isSelected || isToday ? '600' : '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '13px',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            if (!isSelected) e.target.style.background = '#f1f5f9';
-          }}
-          onMouseLeave={(e) => {
-            if (!isSelected) e.target.style.background = isToday ? '#eff6ff' : 'transparent';
-          }}
-        >
-          {d}
-        </button>
-      );
-    }
-
-    return days;
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange('');
   };
 
-  const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return placeholder;
-    const [year, month, day] = dateStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  // Format display text (e.g. 15 May 1998)
+  const displayFormattedDate = useMemo(() => {
+    if (!initialDate) return '';
+    const { year, month, day } = initialDate;
+    const monthName = MONTH_NAMES[month]?.substring(0, 3);
+    return `${String(day).padStart(2, '0')} ${monthName} ${year}`;
+  }, [initialDate]);
 
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"];
+  const hasError = error || className.includes('error');
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', width: '100%', flex: 1 }}>
-      <div
+    <div 
+      className={`custom-datepicker-container ${className} ${isOpen ? 'is-open' : ''}`} 
+      ref={containerRef}
+    >
+      <div 
+        className={`custom-select-trigger form-input ${isOpen ? 'open' : ''} ${hasError ? 'error' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '10px 14px',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          background: 'white',
-          cursor: 'pointer',
-          color: value ? '#0f172a' : '#94a3b8',
-          fontSize: '14px',
-          fontWeight: '500',
-          minWidth: '130px'
-        }}
+        style={{ cursor: 'pointer', position: 'relative' }}
       >
-        <CalendarIcon size={16} color={value ? '#1d4ed8' : '#94a3b8'} />
-        {formatDisplayDate(value)}
+        <div className="custom-select-value">
+          <span className="custom-select-icon" style={{ color: '#1a56db' }}>
+            <Icon size={16} />
+          </span>
+          {displayFormattedDate ? (
+            <span style={{ color: '#0f172a', fontWeight: '500' }}>{displayFormattedDate}</span>
+          ) : (
+            <span className="placeholder">{placeholder}</span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {value && (
+            <button 
+              type="button" 
+              onClick={handleClear}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                borderRadius: '50%'
+              }}
+              title="Clear date"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {isOpen && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 8px)',
-          left: alignRight ? 'auto' : 0,
-          right: alignRight ? 0 : 'auto',
-          background: 'white',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-          padding: '16px',
-          zIndex: 100,
-          width: '260px'
-        }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <button type="button" onClick={handlePrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '4px' }}>
-              <ChevronLeft size={18} />
+        <div className={`custom-datepicker-popup ${openUpward ? 'open-up' : 'open-down'}`}>
+          {/* Header Controls: Month & Year Selector */}
+          <div className="cdp-header">
+            <button type="button" className="cdp-nav-btn" onClick={handlePrevMonth} title="Previous Month">
+              <ChevronLeft size={16} />
             </button>
-            <span style={{ fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </span>
-            <button type="button" onClick={handleNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px', borderRadius: '4px' }}>
-              <ChevronRight size={18} />
+
+            <div className="cdp-title-selectors">
+              <select 
+                value={viewMonth} 
+                onChange={(e) => setViewMonth(Number(e.target.value))}
+                className="cdp-select-month"
+              >
+                {MONTH_NAMES.map((m, idx) => (
+                  <option key={m} value={idx}>{m}</option>
+                ))}
+              </select>
+
+              <select 
+                value={viewYear} 
+                onChange={(e) => setViewYear(Number(e.target.value))}
+                className="cdp-select-year"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            <button type="button" className="cdp-nav-btn" onClick={handleNextMonth} title="Next Month">
+              <ChevronRight size={16} />
             </button>
           </div>
 
-          {/* Days of week */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '8px' }}>
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-              <div key={day} style={{ textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#94a3b8', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {day}
-              </div>
-            ))}
+          <div className="cdp-body">
+            {/* Days of week header */}
+            <div className="cdp-weekdays">
+              {DAYS_OF_WEEK.map((d) => (
+                <span key={d} className="cdp-weekday">{d}</span>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="cdp-days-grid">
+              {daysGrid.map((cell, idx) => {
+                const isSelected = initialDate && 
+                  initialDate.year === cell.year && 
+                  initialDate.month === cell.month && 
+                  initialDate.day === cell.day;
+
+                const isToday = new Date().getFullYear() === cell.year &&
+                  new Date().getMonth() === cell.month &&
+                  new Date().getDate() === cell.day;
+
+                return (
+                  <button
+                    key={`${cell.year}-${cell.month}-${cell.day}-${idx}`}
+                    type="button"
+                    className={`cdp-day-btn ${!cell.isCurrentMonth ? 'other-month' : ''} ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                    onClick={() => handleSelectDay(cell)}
+                  >
+                    {cell.day}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-            {renderCalendar()}
+          {/* Footer Quick Today button */}
+          <div className="cdp-footer">
+            <button 
+              type="button" 
+              className="cdp-clear-btn"
+              onClick={() => {
+                onChange('');
+                setIsOpen(false);
+              }}
+            >
+              Clear
+            </button>
+            <button 
+              type="button" 
+              className="cdp-today-btn" 
+              onClick={() => {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                onChange(`${year}-${month}-${day}`);
+                setIsOpen(false);
+              }}
+            >
+              Today
+            </button>
           </div>
         </div>
       )}

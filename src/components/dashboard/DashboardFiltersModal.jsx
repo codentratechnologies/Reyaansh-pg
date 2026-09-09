@@ -42,7 +42,7 @@ const DashboardFiltersModal = ({ isOpen, onClose, activeFilters, onApplyFilters 
         { value: '', label: 'All Living Types' }, 
         { value: 'Boys', label: 'Boys' },
         { value: 'Girls', label: 'Girls' },
-        { value: 'Family', label: 'Family' }
+        { value: 'Co-living', label: 'Co-living' }
       ],
       value: filters.living_type,
       onChange: (val) => handleChange('living_type', val),
@@ -75,39 +75,21 @@ const DashboardFiltersModal = ({ isOpen, onClose, activeFilters, onApplyFilters 
       desc: 'Filters financial figures and lists by collection status.'
     },
     {
-      label: 'Month',
+      label: 'Month & Year',
       icon: Calendar,
-      options: [
-        { value: '', label: 'All Months' },
-        { value: '1', label: 'January' },
-        { value: '2', label: 'February' },
-        { value: '3', label: 'March' },
-        { value: '4', label: 'April' },
-        { value: '5', label: 'May' },
-        { value: '6', label: 'June' },
-        { value: '7', label: 'July' },
-        { value: '8', label: 'August' },
-        { value: '9', label: 'September' },
-        { value: '10', label: 'October' },
-        { value: '11', label: 'November' },
-        { value: '12', label: 'December' }
-      ],
-      value: filters.month,
-      onChange: (val) => handleChange('month', val),
-      desc: 'Filters monthly recurring metrics.'
-    },
-    {
-      label: 'Year',
-      icon: Calendar,
-      options: [
-        { value: '', label: 'All Years' },
-        { value: '2024', label: '2024' },
-        { value: '2025', label: '2025' },
-        { value: '2026', label: '2026' }
-      ],
-      value: filters.year,
-      onChange: (val) => handleChange('year', val),
-      desc: 'Filters annual aggregations.'
+      type: 'month',
+      value: filters.year && filters.month ? `${filters.year}-${filters.month.toString().padStart(2, '0')}` : '',
+      onChange: (val) => {
+        if (val) {
+          const [y, m] = val.split('-');
+          handleChange('year', y);
+          handleChange('month', parseInt(m, 10).toString());
+        } else {
+          handleChange('year', '');
+          handleChange('month', '');
+        }
+      },
+      desc: 'Filters metrics for a specific month and year.'
     }
   ];
 

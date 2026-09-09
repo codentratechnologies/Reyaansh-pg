@@ -27,28 +27,36 @@ const RecentPaymentsTable = ({ data = [] }) => {
               <th>PG</th>
               <th>Amount</th>
               <th>Date</th>
-              <th>Status</th>
+              <th style={{ textAlign: 'center' }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {(data || []).map((item) => (
-              <tr key={item.payment_id}>
-                <td>
-                  <div className="member-info">
-                    <div className="member-avatar">{getInitials(item.member_name)}</div>
-                    <span>{item.member_name}</span>
-                  </div>
-                </td>
-                <td>{item.pg_name}</td>
-                <td><strong>{formatCurrency(item.amount)}</strong></td>
-                <td>{formatDate(item.date)}</td>
-                <td>
-                  <span className="status-badge status-green">
-                    <Check size={12} strokeWidth={3} /> {item.status}
-                  </span>
+            {!data || data.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '32px 16px', color: '#64748b', fontSize: '14px' }}>
+                  No recent payments found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              data.map((item) => (
+                <tr key={item.payment_id}>
+                  <td>
+                    <div className="member-info">
+                      <div className="member-avatar">{getInitials(item.member_name)}</div>
+                      <span>{item.member_name}</span>
+                    </div>
+                  </td>
+                  <td>{item.pg_name}</td>
+                  <td><strong>{formatCurrency(item.amount)}</strong></td>
+                  <td>{formatDate(item.date)}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className="status-badge status-green">
+                      <Check size={12} strokeWidth={3} /> {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

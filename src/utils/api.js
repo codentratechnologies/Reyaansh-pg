@@ -27,11 +27,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      // Skip interceptor for login route so the login component can display the error
+      if (error.config && error.config.url && error.config.url.includes('/api/login')) {
+        return Promise.reject(error);
+      }
+
       // If the backend says the token is invalid/expired (401), clear it out
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      // Redirect to login page
-      window.location.href = '/';
+      
+      // Redirect to login page if not already there
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }

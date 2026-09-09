@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import CustomSelect from '../../components/common/CustomSelect';
+import CustomDatePicker from '../../components/common/CustomDatePicker';
 import '../../assets/dashboard.css';
 
 import api from '../../utils/api';
@@ -153,11 +154,48 @@ const MemberRegistration = () => {
     deviceModel: ''
   });
 
+  const [errors, setErrors] = useState({});
+
   const handleTextChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    let sanitizedValue = value;
+
+    // Strict numerical input filtering & length constraints
+    if (field === 'mobile' || field === 'altMobile' || field === 'contactNumber') {
+      sanitizedValue = value.replace(/\D/g, '').slice(0, 10);
+    } else if (field === 'aadhaarNo') {
+      sanitizedValue = value.replace(/\D/g, '').slice(0, 12);
+    } else if (field === 'pincode') {
+      sanitizedValue = value.replace(/\D/g, '').slice(0, 6);
+    } else if (field === 'monthlyRent' || field === 'securityDeposit' || field === 'maintenanceCharge') {
+      sanitizedValue = value.replace(/\D/g, '').slice(0, 7);
+    } else if (field === 'panNo') {
+      sanitizedValue = value.toUpperCase().slice(0, 10);
+    } else if (field === 'dob') {
+      const digits = value.replace(/\D/g, '').slice(0, 8);
+      if (digits.length >= 5) {
+        sanitizedValue = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      } else if (digits.length >= 3) {
+        sanitizedValue = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      } else {
+        sanitizedValue = digits;
+      }
+    }
+
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+
+    // Clear field error on input
+    if (errors[field]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
   };
 
   const handleSelectChange = (field, value) => {
+    let autoRent = null;
+
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       
@@ -170,15 +208,186 @@ const MemberRegistration = () => {
         setAvailableBeds([]);
       } else if (field === 'roomNumber') {
         updated.bed = '';
-        const selectedRoom = availableRooms.find(r => (r.room_id === value || r.room_number === value));
+        const selectedRoom = availableRooms.find(r => (r.room_id === value || r.id === value || r.room_number === value));
         setAvailableBeds(selectedRoom?.available_beds || []);
+
+        const rRent = selectedRoom?.rent || selectedRoom?.monthly_rent || selectedRoom?.rent_amount || selectedRoom?.price || selectedRoom?.room_rent;
+        if (rRent) {
+          updated.monthlyRent = String(rRent);
+          autoRent = String(rRent);
+        }
+      } else if (field === 'bed') {
+        const selectedBed = availableBeds.find(b => (b.bed_id === value || b.id === value || b.bed_number === value));
+        const bRent = selectedBed?.rent || selectedBed?.monthly_rent || selectedBed?.rent_amount || selectedBed?.price || selectedBed?.bed_rent;
+
+        if (bRent) {
+          updated.monthlyRent = String(bRent);
+          autoRent = String(bRent);
+        } else {
+          const selectedRoom = availableRooms.find(r => (r.room_id === updated.roomNumber || r.id === updated.roomNumber || r.room_number === updated.roomNumber));
+          const rRent = selectedRoom?.rent || selectedRoom?.monthly_rent || selectedRoom?.rent_amount || selectedRoom?.price || selectedRoom?.room_rent;
+          if (rRent) {
+            updated.monthlyRent = String(rRent);
+            autoRent = String(rRent);
+          }
+        }
       }
       
       return updated;
     });
+
+    if (errors[field] || autoRent) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        if (autoRent) delete next.monthlyRent;
+        return next;
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // 1. Personal Information
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full Name is required';
+    }
+    if (!formData.mobile) {
+      newErrors.mobile = 'Mobile Number is required';
+    } else if (formData.mobile.length !== 10) {
+      newErrors.mobile = 'Mobile Number must be exactly 10 digits';
+    } else if (!/^[6-9]\d{9}$/.test(formData.mobile)) {
+      newErrors.mobile = 'Enter a valid 10-digit mobile number starting with 6-9';
+    }
+
+    if (formData.altMobile && formData.altMobile.length !== 10) {
+      newErrors.altMobile = 'Alternate Mobile Number must be 10 digits';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Enter a valid email address';
+    }
+
+    if (!formData.occupation) {
+      newErrors.occupation = 'Please select an occupation';
+    }
+
+    if (!formData.dob) {
+      newErrors.dob = 'Date of Birth is required';
+    }
+
+    if (!formData.gender) {
+      newErrors.gender = 'Please select a gender';
+    }
+
+    if (!formData.company.trim()) {
+      newErrors.company = 'Company / College Name is required';
+    }
+
+    // 2. Identity Verification
+    if (!formData.aadhaarNo) {
+      newErrors.aadhaarNo = 'Aadhaar Number is required';
+    } else if (formData.aadhaarNo.length !== 12) {
+      newErrors.aadhaarNo = 'Aadhaar Number must be exactly 12 digits';
+    }
+
+    if (formData.panNo && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNo)) {
+      newErrors.panNo = 'Enter a valid 10-character PAN (e.g. ABCDE1234F)';
+    }
+
+    // 3. Emergency Contact
+    if (!formData.contactPerson.trim()) {
+      newErrors.contactPerson = 'Contact Person Name is required';
+    }
+    if (!formData.relationship) {
+      newErrors.relationship = 'Please select a relationship';
+    }
+    if (!formData.contactNumber) {
+      newErrors.contactNumber = 'Emergency Contact Number is required';
+    } else if (formData.contactNumber.length !== 10) {
+      newErrors.contactNumber = 'Emergency Contact Number must be 10 digits';
+    }
+
+    // 4. Address Details
+    if (!formData.addressLine1.trim()) {
+      newErrors.addressLine1 = 'Address Line 1 is required';
+    }
+    if (!formData.country) {
+      newErrors.country = 'Country is required';
+    }
+    if (!formData.state) {
+      newErrors.state = 'State is required';
+    }
+    if (!formData.city) {
+      newErrors.city = 'City is required';
+    }
+    if (!formData.pincode) {
+      newErrors.pincode = 'Pincode is required';
+    } else if (formData.pincode.length !== 6) {
+      newErrors.pincode = 'Pincode must be exactly 6 digits';
+    }
+
+    // 5. Stay Details
+    if (!formData.pgType) {
+      newErrors.pgType = 'Please select PG Type';
+    }
+    if (!formData.pgName) {
+      newErrors.pgName = 'Please select a PG Property';
+    }
+    if (!formData.roomNumber) {
+      newErrors.roomNumber = 'Please select a Room/Flat Number';
+    }
+    if (formData.pgType !== 'Apartment' && !formData.bed) {
+      newErrors.bed = 'Please select a Bed';
+    }
+
+    // 6. Rent Details
+    if (!formData.monthlyRent) {
+      newErrors.monthlyRent = 'Monthly Rent is required';
+    } else if (Number(formData.monthlyRent) <= 0) {
+      newErrors.monthlyRent = 'Monthly Rent must be greater than 0';
+    }
+
+    if (!formData.securityDeposit) {
+      newErrors.securityDeposit = 'Security Deposit is required';
+    }
+    if (!formData.maintenanceCharge) {
+      newErrors.maintenanceCharge = 'Maintenance Charge is required';
+    }
+    if (!formData.rentDueDate) {
+      newErrors.rentDueDate = 'Please select Rent Due Date';
+    }
+    if (!formData.noticePeriod) {
+      newErrors.noticePeriod = 'Please select Notice Period';
+    }
+
+    // 7. Member Status
+    if (!formData.status) {
+      newErrors.status = 'Please select Member Status';
+    }
+    if (formData.status === 'Notice Period' && !formData.reason.trim()) {
+      newErrors.reason = 'Reason is required when status is Notice Period';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      setError("Please fix the highlighted errors before submitting the form.");
+      setTimeout(() => {
+        const firstErrorElement = document.querySelector('.form-input.error, .custom-select-trigger.error');
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -313,8 +522,31 @@ const MemberRegistration = () => {
     : [];
 
   const pgOptions = availabilityData.map(pg => ({ value: pg.pg_id || pg.id, label: pg.name || pg.pg_name }));
-  const roomOptions = availableRooms.map(r => ({ value: r.room_id || r.id, label: r.room_number || r.flat_no || r.room_name }));
-  const bedOptions = availableBeds.map(b => ({ value: b.bed_id || b.id, label: b.bed_name || b.bed_number }));
+
+  const roomOptions = availableRooms.map(r => {
+    const rentVal = r.rent || r.monthly_rent || r.rent_amount || r.price || r.room_rent;
+    const sharingInfo = r.sharing ? `${r.sharing} Sharing` : (r.bhk ? `${r.bhk} BHK` : '');
+    const rentInfo = rentVal ? `₹${Number(rentVal).toLocaleString('en-IN')}` : '';
+    
+    let extraLabel = '';
+    if (sharingInfo && rentInfo) extraLabel = ` (${sharingInfo} - ${rentInfo})`;
+    else if (sharingInfo) extraLabel = ` (${sharingInfo})`;
+    else if (rentInfo) extraLabel = ` (${rentInfo})`;
+
+    return { 
+      value: r.room_id || r.id || r.room_number, 
+      label: `${r.room_number || r.flat_no || r.room_name}${extraLabel}` 
+    };
+  });
+
+  const bedOptions = availableBeds.map(b => {
+    const rentVal = b.rent || b.monthly_rent || b.rent_amount || b.price || b.bed_rent;
+    const rentInfo = rentVal ? ` - ₹${Number(rentVal).toLocaleString('en-IN')}` : '';
+    return { 
+      value: b.bed_id || b.id || b.bed_number, 
+      label: `${b.bed_name || b.bed_number}${rentInfo}` 
+    };
+  });
 
   if (isSubmitted) {
     const selectedPgObj = pgOptions.find(p => p.value === formData.pgName);
@@ -387,11 +619,11 @@ const MemberRegistration = () => {
   return (
     <div style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
       {/* Simple standalone header */}
-      <header style={{ backgroundColor: '#ffffff', padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <header className="member-reg-header" style={{ backgroundColor: '#ffffff', padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 10 }}>
         <h1 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', fontWeight: '600' }}>Reyaansh PG - Member Registration</h1>
       </header>
 
-      <main style={{ padding: '24px' }}>
+      <main className="member-reg-main" style={{ padding: '24px' }}>
         <div className="page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
       {/* 1. Personal Information */}
       <div className="form-section-card theme-blue">
@@ -413,52 +645,64 @@ const MemberRegistration = () => {
           <div className="form-group">
             <label className="form-label">Full Name <span className="required">*</span></label>
             <div className="input-with-icon">
-              <input type="text" className="form-input" placeholder="Enter full name" value={formData.fullName} onChange={(e) => handleTextChange('fullName', e.target.value)} />
+              <input type="text" className={`form-input ${errors.fullName ? 'error' : ''}`} placeholder="Enter full name" value={formData.fullName} onChange={(e) => handleTextChange('fullName', e.target.value)} />
             </div>
+            {errors.fullName && <span className="form-error-text">{errors.fullName}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Mobile Number <span className="required">*</span></label>
             <div className="input-with-icon">
-              <input type="text" className="form-input" placeholder="Enter 10 digit number" value={formData.mobile} onChange={(e) => handleTextChange('mobile', e.target.value)} />
+              <input type="text" maxLength={10} className={`form-input ${errors.mobile ? 'error' : ''}`} placeholder="Enter 10 digit number" value={formData.mobile} onChange={(e) => handleTextChange('mobile', e.target.value)} />
             </div>
+            {errors.mobile && <span className="form-error-text">{errors.mobile}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Alternate Mobile Number</label>
             <div className="input-with-icon">
               <div className="input-icon-left"><PhoneCall size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter alternate number" value={formData.altMobile} onChange={(e) => handleTextChange('altMobile', e.target.value)} />
+              <input type="text" maxLength={10} className={`form-input pl-10 ${errors.altMobile ? 'error' : ''}`} placeholder="Enter alternate number" value={formData.altMobile} onChange={(e) => handleTextChange('altMobile', e.target.value)} />
             </div>
+            {errors.altMobile && <span className="form-error-text">{errors.altMobile}</span>}
           </div>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">Email <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><Mail size={16} /></div>
-              <input type="email" className="form-input pl-10" placeholder="Enter email address" value={formData.email} onChange={(e) => handleTextChange('email', e.target.value)} />
+              <input type="email" className={`form-input pl-10 ${errors.email ? 'error' : ''}`} placeholder="Enter email address" value={formData.email} onChange={(e) => handleTextChange('email', e.target.value)} />
             </div>
+            {errors.email && <span className="form-error-text">{errors.email}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Occupation <span className="required">*</span></label>
-            <CustomSelect options={occupationOptions} value={formData.occupation} onChange={(val) => handleSelectChange('occupation', val)} placeholder="Select occupation" />
+            <CustomSelect options={occupationOptions} value={formData.occupation} onChange={(val) => handleSelectChange('occupation', val)} placeholder="Select occupation" error={!!errors.occupation} />
+            {errors.occupation && <span className="form-error-text">{errors.occupation}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Date of Birth <span className="required">*</span></label>
-            <div className="input-with-icon">
-              <div className="input-icon-left"><Calendar size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="DD/MM/YYYY" value={formData.dob} onChange={(e) => handleTextChange('dob', e.target.value)} />
-            </div>
+            <CustomDatePicker 
+              value={formData.dob} 
+              onChange={(val) => handleTextChange('dob', val)} 
+              placeholder="Select date of birth" 
+              error={!!errors.dob}
+              minYear={1940}
+              maxYear={new Date().getFullYear()}
+            />
+            {errors.dob && <span className="form-error-text">{errors.dob}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Gender <span className="required">*</span></label>
-            <CustomSelect options={genderOptions} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} placeholder="Select gender" />
+            <CustomSelect options={genderOptions} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} placeholder="Select gender" error={!!errors.gender} />
+            {errors.gender && <span className="form-error-text">{errors.gender}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Company / College Name <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><Building size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter company / college name" value={formData.company} onChange={(e) => handleTextChange('company', e.target.value)} />
+              <input type="text" className={`form-input pl-10 ${errors.company ? 'error' : ''}`} placeholder="Enter company / college name" value={formData.company} onChange={(e) => handleTextChange('company', e.target.value)} />
             </div>
+            {errors.company && <span className="form-error-text">{errors.company}</span>}
           </div>
         </div>
       </div>
@@ -478,24 +722,27 @@ const MemberRegistration = () => {
             <label className="form-label">Aadhaar Card (Number) <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><CreditCard size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter 12 digit Aadhaar no." value={formData.aadhaarNo} onChange={(e) => handleTextChange('aadhaarNo', e.target.value)} />
+              <input type="text" maxLength={12} className={`form-input pl-10 ${errors.aadhaarNo ? 'error' : ''}`} placeholder="Enter 12 digit Aadhaar no." value={formData.aadhaarNo} onChange={(e) => handleTextChange('aadhaarNo', e.target.value)} />
             </div>
+            {errors.aadhaarNo && <span className="form-error-text">{errors.aadhaarNo}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">PAN <span className="text-slate-400 font-normal">(Optional)</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><CreditCard size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter PAN number" value={formData.panNo} onChange={(e) => handleTextChange('panNo', e.target.value)} />
+              <input type="text" maxLength={10} className={`form-input pl-10 ${errors.panNo ? 'error' : ''}`} placeholder="Enter PAN number" value={formData.panNo} onChange={(e) => handleTextChange('panNo', e.target.value)} />
             </div>
+            {errors.panNo && <span className="form-error-text">{errors.panNo}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Driving Licence <span className="text-slate-400 font-normal">(Optional)</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><FileText size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter DL number" value={formData.dlNo} onChange={(e) => handleTextChange('dlNo', e.target.value)} />
+              <input type="text" className={`form-input pl-10 ${errors.dlNo ? 'error' : ''}`} placeholder="Enter DL number" value={formData.dlNo} onChange={(e) => handleTextChange('dlNo', e.target.value)} />
             </div>
+            {errors.dlNo && <span className="form-error-text">{errors.dlNo}</span>}
           </div>
         </div>
       </div>
@@ -515,19 +762,22 @@ const MemberRegistration = () => {
             <label className="form-label">Contact Person Name <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><User size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter contact person name" value={formData.contactPerson} onChange={(e) => handleTextChange('contactPerson', e.target.value)} />
+              <input type="text" className={`form-input pl-10 ${errors.contactPerson ? 'error' : ''}`} placeholder="Enter contact person name" value={formData.contactPerson} onChange={(e) => handleTextChange('contactPerson', e.target.value)} />
             </div>
+            {errors.contactPerson && <span className="form-error-text">{errors.contactPerson}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Relationship <span className="required">*</span></label>
-            <CustomSelect options={relationshipOptions} value={formData.relationship} onChange={(val) => handleSelectChange('relationship', val)} placeholder="Select relationship" />
+            <CustomSelect options={relationshipOptions} value={formData.relationship} onChange={(val) => handleSelectChange('relationship', val)} placeholder="Select relationship" error={!!errors.relationship} />
+            {errors.relationship && <span className="form-error-text">{errors.relationship}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Contact Number <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><PhoneCall size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter 10 digit number" value={formData.contactNumber} onChange={(e) => handleTextChange('contactNumber', e.target.value)} />
+              <input type="text" maxLength={10} className={`form-input pl-10 ${errors.contactNumber ? 'error' : ''}`} placeholder="Enter 10 digit number" value={formData.contactNumber} onChange={(e) => handleTextChange('contactNumber', e.target.value)} />
             </div>
+            {errors.contactNumber && <span className="form-error-text">{errors.contactNumber}</span>}
           </div>
         </div>
       </div>
@@ -547,8 +797,9 @@ const MemberRegistration = () => {
             <label className="form-label">Address Line 1 <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><Home size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter address line 1" value={formData.addressLine1} onChange={(e) => handleTextChange('addressLine1', e.target.value)} />
+              <input type="text" className={`form-input pl-10 ${errors.addressLine1 ? 'error' : ''}`} placeholder="Enter address line 1" value={formData.addressLine1} onChange={(e) => handleTextChange('addressLine1', e.target.value)} />
             </div>
+            {errors.addressLine1 && <span className="form-error-text">{errors.addressLine1}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Address Line 2</label>
@@ -561,22 +812,26 @@ const MemberRegistration = () => {
         <div className="form-grid-3" style={{ marginTop: '20px' }}>
           <div className="form-group">
             <label className="form-label">Country <span className="required">*</span></label>
-            <CustomSelect options={countryOptions} value={formData.country} onChange={(val) => handleSelectChange('country', val)} placeholder="Select country" />
+            <CustomSelect options={countryOptions} value={formData.country} onChange={(val) => handleSelectChange('country', val)} placeholder="Select country" error={!!errors.country} />
+            {errors.country && <span className="form-error-text">{errors.country}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">State <span className="required">*</span></label>
-            <CustomSelect options={stateOptions} value={formData.state} onChange={(val) => handleSelectChange('state', val)} placeholder="Select state" />
+            <CustomSelect options={stateOptions} value={formData.state} onChange={(val) => handleSelectChange('state', val)} placeholder="Select state" error={!!errors.state} />
+            {errors.state && <span className="form-error-text">{errors.state}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">City <span className="required">*</span></label>
-            <CustomSelect options={cityOptions} value={formData.city} onChange={(val) => handleSelectChange('city', val)} placeholder="Select city" />
+            <CustomSelect options={cityOptions} value={formData.city} onChange={(val) => handleSelectChange('city', val)} placeholder="Select city" error={!!errors.city} />
+            {errors.city && <span className="form-error-text">{errors.city}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Pincode <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><MapPin size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter 6 digit pincode" value={formData.pincode} onChange={(e) => handleTextChange('pincode', e.target.value)} />
+              <input type="text" maxLength={6} className={`form-input pl-10 ${errors.pincode ? 'error' : ''}`} placeholder="Enter 6 digit pincode" value={formData.pincode} onChange={(e) => handleTextChange('pincode', e.target.value)} />
             </div>
+            {errors.pincode && <span className="form-error-text">{errors.pincode}</span>}
           </div>
         </div>
       </div>
@@ -595,20 +850,24 @@ const MemberRegistration = () => {
           <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">PG Type <span className="required">*</span></label>
-              <CustomSelect options={pgTypeOptions} value={formData.pgType} onChange={(val) => handleSelectChange('pgType', val)} placeholder="Select type" />
+              <CustomSelect options={pgTypeOptions} value={formData.pgType} onChange={(val) => handleSelectChange('pgType', val)} placeholder="Select type" error={!!errors.pgType} />
+              {errors.pgType && <span className="form-error-text">{errors.pgType}</span>}
             </div>
             <div className="form-group">
               <label className="form-label">PG Name <span className="required">*</span></label>
-              <CustomSelect options={pgOptions} value={formData.pgName} onChange={(val) => handleSelectChange('pgName', val)} placeholder={pgOptions.length ? "Select PG" : "Loading..."} />
+              <CustomSelect options={pgOptions} value={formData.pgName} onChange={(val) => handleSelectChange('pgName', val)} placeholder={pgOptions.length ? "Select PG" : "Loading..."} error={!!errors.pgName} />
+              {errors.pgName && <span className="form-error-text">{errors.pgName}</span>}
             </div>
             <div className="form-group">
               <label className="form-label">Room/Flat Number <span className="required">*</span></label>
-              <CustomSelect options={roomOptions} value={formData.roomNumber} onChange={(val) => handleSelectChange('roomNumber', val)} placeholder={roomOptions.length ? "Select room" : "Select PG first"} />
+              <CustomSelect options={roomOptions} value={formData.roomNumber} onChange={(val) => handleSelectChange('roomNumber', val)} placeholder={roomOptions.length ? "Select room" : "Select PG first"} error={!!errors.roomNumber} />
+              {errors.roomNumber && <span className="form-error-text">{errors.roomNumber}</span>}
             </div>
             {formData.pgType !== 'Apartment' && (
               <div className="form-group">
                 <label className="form-label">Bed <span className="required">*</span></label>
-                <CustomSelect options={bedOptions} value={formData.bed} onChange={(val) => handleSelectChange('bed', val)} placeholder={bedOptions.length ? "Select bed" : "Select room first"} />
+                <CustomSelect options={bedOptions} value={formData.bed} onChange={(val) => handleSelectChange('bed', val)} placeholder={bedOptions.length ? "Select bed" : "Select room first"} error={!!errors.bed} />
+                {errors.bed && <span className="form-error-text">{errors.bed}</span>}
               </div>
             )}
           </div>
@@ -630,32 +889,37 @@ const MemberRegistration = () => {
             <label className="form-label">Monthly Rent <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><IndianRupee size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter amount" value={formData.monthlyRent} onChange={(e) => handleTextChange('monthlyRent', e.target.value)} />
+              <input type="text" maxLength={7} className={`form-input pl-10 ${errors.monthlyRent ? 'error' : ''}`} placeholder="Enter amount" value={formData.monthlyRent} onChange={(e) => handleTextChange('monthlyRent', e.target.value)} />
             </div>
+            {errors.monthlyRent && <span className="form-error-text">{errors.monthlyRent}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Security Deposit <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><IndianRupee size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter amount" value={formData.securityDeposit} onChange={(e) => handleTextChange('securityDeposit', e.target.value)} />
+              <input type="text" maxLength={7} className={`form-input pl-10 ${errors.securityDeposit ? 'error' : ''}`} placeholder="Enter amount" value={formData.securityDeposit} onChange={(e) => handleTextChange('securityDeposit', e.target.value)} />
             </div>
+            {errors.securityDeposit && <span className="form-error-text">{errors.securityDeposit}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Maintenance Charge <span className="required">*</span></label>
             <div className="input-with-icon">
               <div className="input-icon-left"><IndianRupee size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter amount" value={formData.maintenanceCharge} onChange={(e) => handleTextChange('maintenanceCharge', e.target.value)} />
+              <input type="text" maxLength={7} className={`form-input pl-10 ${errors.maintenanceCharge ? 'error' : ''}`} placeholder="Enter amount" value={formData.maintenanceCharge} onChange={(e) => handleTextChange('maintenanceCharge', e.target.value)} />
             </div>
+            {errors.maintenanceCharge && <span className="form-error-text">{errors.maintenanceCharge}</span>}
           </div>
         </div>
         <div className="form-grid-2" style={{ marginTop: '20px' }}>
           <div className="form-group">
             <label className="form-label">Rent Due Date <span className="required">*</span> <span className="text-slate-400 font-normal">( 1-31 )</span></label>
-            <CustomSelect options={dueDaysOptions} value={formData.rentDueDate} onChange={(val) => handleSelectChange('rentDueDate', val)} placeholder="Select day (1-31)" />
+            <CustomSelect options={dueDaysOptions} value={formData.rentDueDate} onChange={(val) => handleSelectChange('rentDueDate', val)} placeholder="Select day (1-31)" error={!!errors.rentDueDate} />
+            {errors.rentDueDate && <span className="form-error-text">{errors.rentDueDate}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Notice Period <span className="required">*</span> <span className="text-slate-400 font-normal">( Days )</span></label>
-            <CustomSelect options={noticePeriodOptions} value={formData.noticePeriod} onChange={(val) => handleSelectChange('noticePeriod', val)} placeholder="Select days" />
+            <CustomSelect options={noticePeriodOptions} value={formData.noticePeriod} onChange={(val) => handleSelectChange('noticePeriod', val)} placeholder="Select days" error={!!errors.noticePeriod} />
+            {errors.noticePeriod && <span className="form-error-text">{errors.noticePeriod}</span>}
           </div>
         </div>
       </div>
@@ -673,14 +937,16 @@ const MemberRegistration = () => {
         <div className="form-grid-2">
           <div className="form-group">
             <label className="form-label">Status <span className="required">*</span></label>
-            <CustomSelect options={statusOptions} value={formData.status} onChange={(val) => handleSelectChange('status', val)} placeholder="Select status" />
+            <CustomSelect options={statusOptions} value={formData.status} onChange={(val) => handleSelectChange('status', val)} placeholder="Select status" error={!!errors.status} />
+            {errors.status && <span className="form-error-text">{errors.status}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Reason</label>
             <div className="input-with-icon">
               <div className="input-icon-left"><FileText size={16} /></div>
-              <input type="text" className="form-input pl-10" placeholder="Enter reason (required if status is Notice Period)" value={formData.reason} onChange={(e) => handleTextChange('reason', e.target.value)} />
+              <input type="text" className={`form-input pl-10 ${errors.reason ? 'error' : ''}`} placeholder="Enter reason (required if status is Notice Period)" value={formData.reason} onChange={(e) => handleTextChange('reason', e.target.value)} />
             </div>
+            {errors.reason && <span className="form-error-text">{errors.reason}</span>}
             <div className="text-right text-xs text-slate-400 mt-1">{formData.reason.length} / 500</div>
           </div>
         </div>
@@ -694,9 +960,6 @@ const MemberRegistration = () => {
 
       {/* Bottom Actions */}
       <div className="form-actions" style={{ padding: '24px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '16px' }}>
-        <Button variant="outline" icon={<X size={16} />} onClick={() => navigate('/member-management')} disabled={isSubmitting}>
-          Cancel
-        </Button>
         <Button variant="primary" icon={<Save size={16} />} onClick={handleSubmit} disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save Member'}
         </Button>

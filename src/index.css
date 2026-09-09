@@ -202,53 +202,67 @@ body {
 
 .login-card {
   background: #ffffff;
-  border-radius: 20px;
-  padding: 26px 32px 22px;
+  border-radius: 24px;
+  padding: 40px 36px 32px;
   width: 100%;
-  max-width: 430px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+  max-width: 420px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 20px 60px rgba(26,86,219,0.10), 0 0 0 1px rgba(226,232,240,0.8);
+  position: relative;
+  overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1a56db 0%, #6366f1 50%, #0ea5e9 100%);
+  border-radius: 24px 24px 0 0;
 }
 
 /* shield */
 .shield-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 .shield-circle {
-  width: 64px;
-  height: 64px;
-  background: #dbeafe;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(145deg, #dbeafe 0%, #eff6ff 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 20px rgba(26,86,219,0.18), 0 0 0 6px rgba(26,86,219,0.07);
 }
 
 .card-title {
   text-align: center;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
 }
 .card-sub {
   text-align: center;
-  font-size: 12.5px;
+  font-size: 13px;
   color: #64748b;
-  margin-bottom: 16px;
+  margin-bottom: 28px;
+  line-height: 1.5;
 }
 
 /* field */
 .field {
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 .field-label {
   display: block;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 5px;
+  color: #374151;
+  margin-bottom: 7px;
+  letter-spacing: 0.01em;
 }
 .input-wrap {
   position: relative;
@@ -258,32 +272,37 @@ body {
 .input-icon {
   position: absolute;
   left: 14px;
-  width: 18px;
-  height: 18px;
-  color: #64748b;
+  width: 17px;
+  height: 17px;
+  color: #94a3b8;
   pointer-events: none;
   flex-shrink: 0;
+  transition: color 0.2s;
+}
+.input-wrap:focus-within .input-icon {
+  color: #1a56db;
 }
 .input {
   width: 100%;
-  height: 44px;
-  padding: 0 44px 0 42px;
+  height: 48px;
+  padding: 0 48px 0 44px;
   border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 10px;
+  font-size: 13.5px;
   font-family: 'Inter', sans-serif;
   color: #1e293b;
-  background: #ffffff;
+  background: #f8fafc;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .input::placeholder {
-  color: #94a3b8;
-  font-size: 12.5px;
+  color: #b0bec5;
+  font-size: 13px;
 }
 .input:focus {
   border-color: #1a56db;
-  box-shadow: 0 0 0 3px rgba(26,86,219,0.1);
+  box-shadow: 0 0 0 4px rgba(26,86,219,0.09);
+  background: #ffffff;
 }
 .eye-btn {
   position: absolute;
@@ -355,6 +374,7 @@ body {
   cursor: pointer;
   transition: background 0.2s;
   letter-spacing: 0.01em;
+  margin-top: 8px;
 }
 .login-btn:hover { background: #1d4ed8; }
 
@@ -446,18 +466,22 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  font-size: 12.5px;
-  color: #64748b;
+  font-size: 12px;
+  color: #94a3b8;
   font-weight: 500;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
 }
 .ssl {
   display: flex;
   align-items: center;
   gap: 5px;
+  color: #64748b;
 }
-.ssl svg { color: #64748b; }
+.ssl svg { color: #22c55e; }
 .sep {
-  color: #cbd5e1;
+  color: #e2e8f0;
   font-size: 14px;
 }
 
@@ -514,11 +538,11 @@ body {
   .login-card {
     position: relative;
     z-index: 1;
-    max-width: 460px;
+    max-width: 440px;
     width: 100%;
-    padding: 36px 32px 30px;
-    border-radius: 20px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    padding: 40px 32px 32px;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(26,86,219,0.12), 0 0 0 1px rgba(226,232,240,0.8);
   }
 
   .card-title {

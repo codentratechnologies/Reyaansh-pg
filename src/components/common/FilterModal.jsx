@@ -3,6 +3,7 @@ import { Filter, X, Trash2, RotateCcw, Info } from 'lucide-react';
 import Button from './Button';
 import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
+import CustomMonthPicker from './CustomMonthPicker';
 
 const FilterModal = ({ 
   isOpen, 
@@ -74,6 +75,12 @@ const FilterModal = ({
                         alignRight={true}
                       />
                     </div>
+                  ) : filter.type === 'month' ? (
+                    <CustomMonthPicker
+                      value={filter.value}
+                      onChange={filter.onChange}
+                      placeholder={filter.placeholder || "Select Month & Year"}
+                    />
                   ) : filter.type === 'text' ? (
                     <div style={{ position: 'relative' }}>
                       {filter.inputIcon && <filter.inputIcon size={16} style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />}

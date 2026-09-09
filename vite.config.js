@@ -17,7 +17,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://constrain-skyline-cubical.ngrok-free.dev',//'https://tinderbox-bouncing-superbowl.ngrok-free.dev',
+        target: 'https://tinderbox-bouncing-superbowl.ngrok-free.dev',
         changeOrigin: true,
         secure: false,
       }

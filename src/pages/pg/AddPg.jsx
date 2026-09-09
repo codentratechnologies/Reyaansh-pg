@@ -57,6 +57,8 @@ const AddPg = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [roomErrors, setRoomErrors] = useState({});
 
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
@@ -125,7 +127,79 @@ const AddPg = () => {
     });
   };
 
+  const validateStep1 = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.type) errors.type = 'PG Type is required';
+    if (!formData.genderType) errors.genderType = 'Living Type is required';
+    
+    if (!formData.contact_person.trim()) errors.contact_person = 'Contact Person is required';
+    else if (!/^[A-Za-z\s]+$/.test(formData.contact_person)) errors.contact_person = 'Alphabetic characters and spaces only';
+    
+    if (!formData.mobile.trim()) errors.mobile = 'Mobile is required';
+    else if (!/^\d{10}$/.test(formData.mobile)) errors.mobile = 'Mobile must be exactly 10 digits';
+    
+    if (!formData.address_line_1.trim()) errors.address_line_1 = 'Address Line 1 is required';
+    if (!formData.area.trim()) errors.area = 'Area is required';
+    if (!formData.city) errors.city = 'City is required';
+    if (!formData.state) errors.state = 'State is required';
+    if (!formData.country) errors.country = 'Country is required';
+    
+    if (!formData.pincode.trim()) errors.pincode = 'Pincode is required';
+    else if (!/^\d{6}$/.test(formData.pincode)) errors.pincode = 'Pincode must be exactly 6 digits';
+    
+    if (!numRooms || parseInt(numRooms) < 1) errors.numRooms = 'Valid number of rooms/flats is required';
+    if (!formData.propertyStatus) errors.propertyStatus = 'Property Status is required';
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const rErrors = {};
+    let isValid = true;
+    const newExpandedRooms = { ...expandedRooms };
+
+    rooms.forEach((room, index) => {
+      const errs = {};
+      if (!room.roomNo?.trim()) errs.roomNo = 'Required';
+      
+      if (formData.type === 'Apartment') {
+        if (!room.bhk || parseInt(room.bhk) < 1) errs.bhk = 'Required';
+      } else {
+        if (!room.sharing || parseInt(room.sharing) < 1) errs.sharing = 'Required';
+      }
+      
+      if (!room.rent || parseFloat(room.rent) <= 0) errs.rent = 'Required';
+
+      if (Object.keys(errs).length > 0) {
+        rErrors[index] = errs;
+        isValid = false;
+        newExpandedRooms[index] = true;
+      }
+    });
+
+    setRoomErrors(rErrors);
+    if (!isValid) setExpandedRooms(newExpandedRooms);
+    return isValid;
+  };
+
   const handleSubmit = async () => {
+    const isStep1Valid = validateStep1();
+    const isStep2Valid = validateStep2();
+
+    if (!isStep1Valid) {
+      setCurrentStep(1);
+      window.scrollTo(0, 0);
+      setError('Please fix the highlighted errors in the Basic Information before saving.');
+      return;
+    }
+
+    if (!isStep2Valid) {
+      setError('Please fix the highlighted errors in the room configuration before saving.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -219,12 +293,29 @@ const AddPg = () => {
 
       <div className="page-header" style={{ alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <div className="step-indicator-wrapper">
-          <div className={`step-item ${currentStep === 1 ? 'active' : ''}`}>
+          <div 
+            className={`step-item ${currentStep === 1 ? 'active' : ''}`} 
+            onClick={() => setCurrentStep(1)}
+            style={{ cursor: 'pointer' }}
+          >
             <span className="step-number">1</span>
             <span>PG Configuration</span>
           </div>
           <div className="step-divider"></div>
-          <div className={`step-item ${currentStep === 2 ? 'active' : ''}`}>
+          <div 
+            className={`step-item ${currentStep === 2 ? 'active' : ''}`}
+            onClick={() => {
+              if (currentStep === 1) {
+                validateStep1();
+                if (!numRooms || parseInt(numRooms) < 1) {
+                  setFieldErrors(prev => ({ ...prev, numRooms: 'Please fill the no. of rooms first' }));
+                  return;
+                }
+                setCurrentStep(2);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+          >
             <span className="step-number">2</span>
             <span>Room Configuration</span>
           </div>
@@ -254,8 +345,8 @@ const AddPg = () => {
           )}
           <div className="form-group">
             <label className="form-label">Name <span className="required">*</span></label>
-            <input type="text" className="form-input" placeholder="Enter name (Max 100 chars)" value={formData.name} onChange={(e) => handleTextChange('name', e.target.value)} />
-            <span className="form-helper-text">Alphanumeric with spaces</span>
+            <input type="text" className={`form-input ${fieldErrors.name ? 'error' : ''}`} placeholder="Enter name (Max 100 chars)" value={formData.name} onChange={(e) => handleTextChange('name', e.target.value)} />
+            {fieldErrors.name ? <span className="form-error-text">{fieldErrors.name}</span> : <span className="form-helper-text">Alphanumeric with spaces</span>}
           </div>
           <div className="form-group">
             <label className="form-label">PG Type <span className="required">*</span></label>
@@ -264,7 +355,9 @@ const AddPg = () => {
               value={formData.type}
               onChange={(val) => handleSelectChange('type', val)}
               placeholder="Select type"
+              className={fieldErrors.type ? 'error' : ''}
             />
+            {fieldErrors.type && <span className="form-error-text">{fieldErrors.type}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Living Type <span className="required">*</span></label>
@@ -273,18 +366,29 @@ const AddPg = () => {
               value={formData.genderType}
               onChange={(val) => handleSelectChange('genderType', val)}
               placeholder="Select gender type"
+              className={fieldErrors.genderType ? 'error' : ''}
             />
+            {fieldErrors.genderType && <span className="form-error-text">{fieldErrors.genderType}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Contact Person <span className="required">*</span></label>
-            <input type="text" className="form-input" placeholder="Enter contact person (Max 100 chars)" value={formData.contact_person} onChange={(e) => handleTextChange('contact_person', e.target.value)} />
-            <span className="form-helper-text">Alphabetic characters and spaces only</span>
+            <input type="text" className={`form-input ${fieldErrors.contact_person ? 'error' : ''}`} placeholder="Enter contact person (Max 100 chars)" value={formData.contact_person} onChange={(e) => handleTextChange('contact_person', e.target.value)} />
+            {fieldErrors.contact_person ? <span className="form-error-text">{fieldErrors.contact_person}</span> : <span className="form-helper-text">Alphabetic characters and spaces only</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Mobile <span className="required">*</span></label>
-            <input type="text" className="form-input" placeholder="Enter mobile (10 digits)" value={formData.mobile} onChange={(e) => handleTextChange('mobile', e.target.value)} />
-            <span className="form-helper-text">Exactly 10 digits</span>
+            <input 
+              type="text" 
+              className={`form-input ${fieldErrors.mobile ? 'error' : ''}`} 
+              placeholder="Enter mobile (10 digits)" 
+              value={formData.mobile} 
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (val.length <= 10) handleTextChange('mobile', val);
+              }} 
+            />
+            {fieldErrors.mobile ? <span className="form-error-text">{fieldErrors.mobile}</span> : <span className="form-helper-text">Exactly 10 digits</span>}
           </div>
           <div className="form-group col-span-2">
             <label className="form-label">Description</label>
@@ -319,7 +423,8 @@ const AddPg = () => {
           <div className="form-grid-4">
           <div className="form-group">
             <label className="form-label">Address Line 1 <span className="required">*</span></label>
-            <input type="text" className="form-input" placeholder="Enter address line 1 (Max 255 chars)" value={formData.address_line_1} onChange={(e) => handleTextChange('address_line_1', e.target.value)} />
+            <input type="text" className={`form-input ${fieldErrors.address_line_1 ? 'error' : ''}`} placeholder="Enter address line 1 (Max 255 chars)" value={formData.address_line_1} onChange={(e) => handleTextChange('address_line_1', e.target.value)} />
+            {fieldErrors.address_line_1 && <span className="form-error-text">{fieldErrors.address_line_1}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Address Line 2</label>
@@ -327,7 +432,8 @@ const AddPg = () => {
           </div>
           <div className="form-group">
             <label className="form-label">Area <span className="required">*</span></label>
-            <input type="text" className="form-input" placeholder="Enter area (Max 100 chars)" value={formData.area} onChange={(e) => handleTextChange('area', e.target.value)} />
+            <input type="text" className={`form-input ${fieldErrors.area ? 'error' : ''}`} placeholder="Enter area (Max 100 chars)" value={formData.area} onChange={(e) => handleTextChange('area', e.target.value)} />
+            {fieldErrors.area && <span className="form-error-text">{fieldErrors.area}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Landmark</label>
@@ -342,8 +448,9 @@ const AddPg = () => {
               onChange={(val) => handleSelectChange('city', val)}
               placeholder="Select city"
               icon={Building}
-              className="input-with-icon"
+              className={`input-with-icon ${fieldErrors.city ? 'error' : ''}`}
             />
+            {fieldErrors.city && <span className="form-error-text">{fieldErrors.city}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">State <span className="required">*</span></label>
@@ -352,12 +459,23 @@ const AddPg = () => {
               value={formData.state}
               onChange={(val) => handleSelectChange('state', val)}
               placeholder="Select state"
+              className={fieldErrors.state ? 'error' : ''}
             />
+            {fieldErrors.state && <span className="form-error-text">{fieldErrors.state}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Pincode <span className="required">*</span></label>
-            <input type="text" className="form-input" placeholder="Enter pincode (6 digits)" value={formData.pincode} onChange={(e) => handleTextChange('pincode', e.target.value)} />
-            <span className="form-helper-text">Exactly 6 digits</span>
+            <input 
+              type="text" 
+              className={`form-input ${fieldErrors.pincode ? 'error' : ''}`} 
+              placeholder="Enter pincode (6 digits)" 
+              value={formData.pincode} 
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (val.length <= 6) handleTextChange('pincode', val);
+              }} 
+            />
+            {fieldErrors.pincode ? <span className="form-error-text">{fieldErrors.pincode}</span> : <span className="form-helper-text">Exactly 6 digits</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Country <span className="required">*</span></label>
@@ -366,7 +484,9 @@ const AddPg = () => {
               value={formData.country}
               onChange={(val) => handleSelectChange('country', val)}
               placeholder="Select country"
+              className={fieldErrors.country ? 'error' : ''}
             />
+            {fieldErrors.country && <span className="form-error-text">{fieldErrors.country}</span>}
           </div>
         </div>
         </div>
@@ -391,17 +511,19 @@ const AddPg = () => {
             <div className="input-with-icon">
               <div className="input-icon-left"><Search size={16} /></div>
               <input 
-                type="number" 
-                className="form-input pl-10" 
+                type="text" 
+                inputMode="numeric" 
+                pattern="[0-9]*"
+                className={`form-input pl-10 ${fieldErrors.numRooms ? 'error' : ''}`} 
                 placeholder="Enter number of rooms/flats"
                 value={numRooms}
-                min="1"
-                max="999"
-                onChange={(e) => handleNumRoomsChange(e.target.value)}
-                onWheel={(e) => e.target.blur()}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  if (val.length <= 3) handleNumRoomsChange(val);
+                }}
               />
             </div>
-            <span className="form-helper-text">Positive integer (Max 999)</span>
+            {fieldErrors.numRooms ? <span className="form-error-text">{fieldErrors.numRooms}</span> : <span className="form-helper-text">Positive integer (Max 999)</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Property Status <span className="required">*</span></label>
@@ -409,7 +531,9 @@ const AddPg = () => {
               options={statusOptions}
               value={formData.propertyStatus}
               onChange={(val) => handleSelectChange('propertyStatus', val)}
+              className={fieldErrors.propertyStatus ? 'error' : ''}
             />
+            {fieldErrors.propertyStatus && <span className="form-error-text">{fieldErrors.propertyStatus}</span>}
           </div>
         </div>
         </div>
@@ -588,25 +712,30 @@ const AddPg = () => {
                               <label className="form-label" style={{ fontSize: '13px' }}>Flat No. <span className="required">*</span></label>
                               <input 
                                 type="text" 
-                                className="form-input" 
+                                className={`form-input ${roomErrors[index]?.roomNo ? 'error' : ''}`} 
                                 placeholder="e.g. A-101"
                                 value={room.roomNo}
                                 onChange={(e) => updateRoom(index, 'roomNo', e.target.value)}
                                 style={{ padding: '10px 12px', fontSize: '14px' }}
                               />
+                              {roomErrors[index]?.roomNo && <span className="form-error-text" style={{marginTop: '2px'}}>{roomErrors[index].roomNo}</span>}
                             </div>
                             <div className="form-group" style={{ margin: 0 }}>
                               <label className="form-label" style={{ fontSize: '13px' }}>BHK <span className="required">*</span></label>
                               <input 
-                                type="number" 
-                                className="form-input" 
+                                type="text" 
+                                inputMode="numeric" 
+                                pattern="[0-9]*"
+                                className={`form-input ${roomErrors[index]?.bhk ? 'error' : ''}`} 
                                 placeholder="e.g. 2"
-                                min="1" max="10"
                                 value={room.bhk || ''}
-                                onChange={(e) => updateRoom(index, 'bhk', e.target.value)}
-                                onWheel={(e) => e.target.blur()}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '');
+                                  if (val.length <= 2) updateRoom(index, 'bhk', val);
+                                }}
                                 style={{ padding: '10px 12px', fontSize: '14px' }}
                               />
+                              {roomErrors[index]?.bhk && <span className="form-error-text" style={{marginTop: '2px'}}>{roomErrors[index].bhk}</span>}
                             </div>
                           </>
                         ) : (
@@ -615,25 +744,30 @@ const AddPg = () => {
                               <label className="form-label" style={{ fontSize: '13px' }}>Room Number <span className="required">*</span></label>
                               <input 
                                 type="text" 
-                                className="form-input" 
+                                className={`form-input ${roomErrors[index]?.roomNo ? 'error' : ''}`} 
                                 placeholder="e.g. A-101"
                                 value={room.roomNo}
                                 onChange={(e) => updateRoom(index, 'roomNo', e.target.value)}
                                 style={{ padding: '10px 12px', fontSize: '14px' }}
                               />
+                              {roomErrors[index]?.roomNo && <span className="form-error-text" style={{marginTop: '2px'}}>{roomErrors[index].roomNo}</span>}
                             </div>
                             <div className="form-group" style={{ margin: 0 }}>
                               <label className="form-label" style={{ fontSize: '13px' }}>Sharing <span className="required">*</span></label>
                               <input 
-                                type="number" 
-                                className="form-input" 
+                                type="text" 
+                                inputMode="numeric" 
+                                pattern="[0-9]*"
+                                className={`form-input ${roomErrors[index]?.sharing ? 'error' : ''}`} 
                                 placeholder="e.g. 2"
-                                min="1" max="10"
                                 value={room.sharing}
-                                onChange={(e) => updateRoom(index, 'sharing', e.target.value)}
-                                onWheel={(e) => e.target.blur()}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, '');
+                                  if (val.length <= 2) updateRoom(index, 'sharing', val);
+                                }}
                                 style={{ padding: '10px 12px', fontSize: '14px' }}
                               />
+                              {roomErrors[index]?.sharing && <span className="form-error-text" style={{marginTop: '2px'}}>{roomErrors[index].sharing}</span>}
                             </div>
                           </>
                         )}
@@ -643,13 +777,14 @@ const AddPg = () => {
                             <div className="input-icon-left" style={{ top: '10px' }}><IndianRupee size={16} /></div>
                             <input 
                               type="text" 
-                              className="form-input pl-10" 
+                              className={`form-input pl-10 ${roomErrors[index]?.rent ? 'error' : ''}`} 
                               placeholder="e.g. 8500"
                               value={room.rent}
-                              onChange={(e) => updateRoom(index, 'rent', e.target.value)}
+                              onChange={(e) => updateRoom(index, 'rent', e.target.value.replace(/\D/g, ''))}
                               style={{ padding: '10px 12px 10px 36px', fontSize: '14px' }}
                             />
                           </div>
+                          {roomErrors[index]?.rent && <span className="form-error-text" style={{marginTop: '2px'}}>{roomErrors[index].rent}</span>}
                         </div>
                       </div>
                     </div>
@@ -674,7 +809,15 @@ const AddPg = () => {
         {currentStep === 1 ? (
           <>
             <Button variant="outline" icon={<X size={16} />} onClick={() => navigate('/pg-management')}>Cancel</Button>
-            <Button variant="primary" icon={<ChevronRight size={16} />} onClick={() => setCurrentStep(2)}>Next: Room Configuration</Button>
+            <Button variant="primary" icon={<ChevronRight size={16} />} onClick={() => {
+              validateStep1(); // Highlight errors but don't block other fields
+              if (!numRooms || parseInt(numRooms) < 1) {
+                setFieldErrors(prev => ({ ...prev, numRooms: 'Please fill the no. of rooms first' }));
+                return;
+              }
+              setCurrentStep(2);
+              window.scrollTo(0, 0);
+            }}>Next: Room Configuration</Button>
           </>
         ) : (
           <>
