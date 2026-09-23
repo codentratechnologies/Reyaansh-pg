@@ -28,6 +28,7 @@ body {
 /* ─── PAGE WRAPPER ─────────────────────────────────── */
 .page-wrapper {
   display: flex;
+  justify-content: center;
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -38,6 +39,7 @@ body {
 .left-panel {
   position: relative;
   flex: 0 0 60%;
+  max-width: 864px;
   display: flex;
   flex-direction: column;
   padding: 36px 52px 0px 100px;
@@ -193,6 +195,7 @@ body {
 /* ─── RIGHT PANEL ───────────────────────────────────── */
 .right-panel {
   flex: 1;
+  max-width: 576px;
   display: flex;
   align-items: center;
   justify-content: flex-start;

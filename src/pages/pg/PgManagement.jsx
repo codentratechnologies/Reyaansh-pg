@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
-  ArrowUpDown, 
+  ArrowUpDown,
   RotateCcw, 
   Plus,
   Eye,
@@ -25,6 +25,7 @@ const PgManagement = () => {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [selectedPg, setSelectedPg] = useState(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   
   // Filters State
   const [filters, setFilters] = useState({
@@ -88,6 +89,40 @@ const PgManagement = () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedPgList = React.useMemo(() => {
+    let sortableItems = [...pgList];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        
+        if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+        if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (bValue == null) return sortConfig.direction === 'asc' ? 1 : -1;
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [pgList, sortConfig]);
 
   const handlePageChange = (newPage) => {
     fetchPgs(newPage, searchTerm, filters);
@@ -155,7 +190,6 @@ const PgManagement = () => {
               <span className="hide-on-mobile">Add New PG</span>
             </Button>
             <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)}>Filter</Button>
-            <Button variant="outline" icon={<ArrowUpDown size={16} />}>Sort</Button>
             <Button variant="outline" icon={<RotateCcw size={16} />} onClick={() => { setSearchTerm(''); fetchPgs(1, ''); }}>Reset</Button>
           </div>
         </div>
@@ -171,13 +205,13 @@ const PgManagement = () => {
           <table className="data-table list-table">
             <thead>
               <tr>
-                <th>Code <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>PG Name <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th style={{ textAlign: 'center' }}>PG Type <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Living Type <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Contact Person <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Mobile <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th style={{ textAlign: 'center' }}>Status <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('pg_id')} style={{ cursor: 'pointer' }}>Code <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('pg_name')} style={{ cursor: 'pointer' }}>PG Name <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('pg_type')} style={{ textAlign: 'center', cursor: 'pointer' }}>PG Type <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('living_type')} style={{ cursor: 'pointer' }}>Living Type <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('contact_person')} style={{ cursor: 'pointer' }}>Contact Person <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('mobile')} style={{ cursor: 'pointer' }}>Mobile <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('status')} style={{ textAlign: 'center', cursor: 'pointer' }}>Status <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
@@ -191,7 +225,7 @@ const PgManagement = () => {
                   <td colSpan="8" className="text-center py-8" style={{ color: '#64748b' }}>No properties found.</td>
                 </tr>
               ) : (
-                pgList.map((pg, index) => {
+                sortedPgList.map((pg, index) => {
                   const initial = pg.contact_person ? pg.contact_person.charAt(0).toUpperCase() : 'U';
                   const isPg = pg.pg_type === 'PG';
                   const isActive = pg.status && pg.status.toLowerCase() === 'active';

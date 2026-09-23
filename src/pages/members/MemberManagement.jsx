@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Search, 
   Filter, 
-  ArrowUpDown, 
+  ArrowUpDown,
   Plus,
   Upload,
   IndianRupee,
@@ -45,6 +45,9 @@ const MemberManagement = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const [memberToVerify, setMemberToVerify] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const [activeFilters, setActiveFilters] = useState({
     pg_name: '', rent_status: '', gender: '', member_status: '', city: ''
@@ -100,6 +103,46 @@ const MemberManagement = () => {
     return () => clearTimeout(timer);
   }, [searchTerm, activeFilters]);
 
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedMembersList = React.useMemo(() => {
+    let sortableItems = [...membersList];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        
+        if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+        if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+        // Special handling for monthly_rent which might be string or number
+        if (sortConfig.key === 'monthly_rent') {
+           aValue = Number(aValue) || 0;
+           bValue = Number(bValue) || 0;
+        }
+
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (bValue == null) return sortConfig.direction === 'asc' ? 1 : -1;
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [membersList, sortConfig]);
+
   const handlePageChange = (newPage) => {
     fetchMembers(newPage, searchTerm, activeFilters);
   };
@@ -124,6 +167,27 @@ const MemberManagement = () => {
       const errorMessage = err.response?.data?.detail || err.message || "Unknown error";
       setError(`Failed to deactivate member. Error: ${errorMessage}`);
       setIsDeactivateModalOpen(false);
+    }
+  };
+
+  const handleVerifyClick = (member) => {
+    if (member.rent_status === 'Pending') {
+      setMemberToVerify(member);
+      setIsVerifyModalOpen(true);
+    }
+  };
+
+  const confirmVerify = async () => {
+    if (!memberToVerify) return;
+    try {
+      await api.post('/api/members/verify-check', { member_id: memberToVerify.id || memberToVerify.member_id });
+      fetchMembers(pagination.current_page, searchTerm, activeFilters);
+      setIsVerifyModalOpen(false);
+    } catch (err) {
+      console.error('Failed to verify member payment:', err);
+      const errorMessage = err.response?.data?.detail || err.message || "Unknown error";
+      setError(`Failed to verify payment. Error: ${errorMessage}`);
+      setIsVerifyModalOpen(false);
     }
   };
 
@@ -199,16 +263,16 @@ const MemberManagement = () => {
           <table className="data-table list-table">
             <thead>
               <tr>
-                <th>ID <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Member <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Mobile <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>PG <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Room <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Bed <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Monthly Rent <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th>Due Date <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th style={{ textAlign: 'center' }}>Rent Status <ArrowUpDown size={12} className="sort-icon" /></th>
-                <th style={{ textAlign: 'center' }}>Member Status <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>ID <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>Member <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('mobile')} style={{ cursor: 'pointer' }}>Mobile <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('pg_name')} style={{ cursor: 'pointer' }}>PG <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('room_number')} style={{ cursor: 'pointer' }}>Room <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('bed_name')} style={{ cursor: 'pointer' }}>Bed <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('monthly_rent')} style={{ cursor: 'pointer' }}>Monthly Rent <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('due_date')} style={{ cursor: 'pointer' }}>Due Date <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('rent_status')} style={{ textAlign: 'center', cursor: 'pointer' }}>Rent Status <ArrowUpDown size={12} className="sort-icon" /></th>
+                <th onClick={() => handleSort('member_status')} style={{ textAlign: 'center', cursor: 'pointer' }}>Member Status <ArrowUpDown size={12} className="sort-icon" /></th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
@@ -222,7 +286,7 @@ const MemberManagement = () => {
                   <td colSpan="11" className="text-center py-8" style={{ color: '#64748b' }}>No members found.</td>
                 </tr>
               ) : (
-                membersList.map((member, index) => {
+                sortedMembersList.map((member, index) => {
                   const theme = getTheme(member.name);
                   const initials = getInitials(member.name);
                   const rentStatus = member.rent_status || 'Pending';
@@ -258,7 +322,13 @@ const MemberManagement = () => {
                       <td className="actions-cell" style={{ textAlign: 'center' }}>
                         <TableActions 
                           customAction={
-                            <button className="action-icon-btn verify-btn" title="Verify Payment">
+                            <button 
+                              className="action-icon-btn verify-btn" 
+                              title={rentStatus === 'Pending' ? "Verify Cash Payment" : "Verification Unavailable"}
+                              disabled={rentStatus !== 'Pending'}
+                              onClick={() => handleVerifyClick(member)}
+                              style={{ opacity: rentStatus !== 'Pending' ? 0.5 : 1, cursor: rentStatus !== 'Pending' ? 'not-allowed' : 'pointer' }}
+                            >
                               <IndianRupee size={16} />
                             </button>
                           }
@@ -314,7 +384,7 @@ const MemberManagement = () => {
       {/* Bottom Alert */}
       <div className="alert-box alert-info-blue" style={{ marginTop: '24px', padding: '16px 24px' }}>
         <Info size={20} />
-        <span style={{ fontSize: '13px' }}>Verify action is enabled only when Rent Status is "In Review". Deactivate is disabled for members with status "Inactive".</span>
+        <span style={{ fontSize: '13px' }}>Verify action is enabled only when Rent Status is "Pending" (for cash payments). Deactivate is disabled for members with status "Inactive".</span>
       </div>
 
       <ConfirmModal 
@@ -324,6 +394,15 @@ const MemberManagement = () => {
         title="Deactivate Member"
         description={`Are you sure you want to deactivate ${selectedMember?.name}? This will change their status to Inactive.`}
         confirmText="Deactivate"
+      />
+
+      <ConfirmModal 
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        onConfirm={confirmVerify}
+        title="Verify Payment"
+        description={`Are you sure you want to verify the payment for ${memberToVerify?.name}?`}
+        confirmText="Yes"
       />
 
       <UploadBankStatementModal 
