@@ -115,6 +115,7 @@ const MemberRegistration = () => {
   const [formData, setFormData] = useState({
     memberId: 'Auto-generated',
     fullName: '',
+    profilePicture: null,
     mobile: '',
     altMobile: '',
     email: '',
@@ -123,7 +124,7 @@ const MemberRegistration = () => {
     gender: '',
     company: '',
 
-    aadhaarNo: '',
+    aadhaarFile: null,
     panNo: '',
     dlNo: '',
 
@@ -162,8 +163,6 @@ const MemberRegistration = () => {
     // Strict numerical input filtering & length constraints
     if (field === 'mobile' || field === 'altMobile' || field === 'contactNumber') {
       sanitizedValue = value.replace(/\D/g, '').slice(0, 10);
-    } else if (field === 'aadhaarNo') {
-      sanitizedValue = value.replace(/\D/g, '').slice(0, 12);
     } else if (field === 'pincode') {
       sanitizedValue = value.replace(/\D/g, '').slice(0, 6);
     } else if (field === 'monthlyRent' || field === 'securityDeposit' || field === 'maintenanceCharge') {
@@ -288,10 +287,9 @@ const MemberRegistration = () => {
     }
 
     // 2. Identity Verification
-    if (!formData.aadhaarNo) {
-      newErrors.aadhaarNo = 'Aadhaar Number is required';
-    } else if (formData.aadhaarNo.length !== 12) {
-      newErrors.aadhaarNo = 'Aadhaar Number must be exactly 12 digits';
+
+    if (!formData.aadhaarFile) {
+      newErrors.aadhaarFile = 'Aadhaar Document is required';
     }
 
     if (formData.panNo && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNo)) {
@@ -401,7 +399,6 @@ const MemberRegistration = () => {
         dob: formData.dob,
         gender: formData.gender,
         company_college_name: formData.company,
-        aadhaar_number: formData.aadhaarNo,
         emergency_contact_name: formData.contactPerson,
         emergency_contact_relationship: formData.relationship,
         emergency_contact_number: formData.contactNumber,
@@ -704,6 +701,55 @@ const MemberRegistration = () => {
             </div>
             {errors.company && <span className="form-error-text">{errors.company}</span>}
           </div>
+
+          <div className="form-group">
+            <label className="form-label">Profile Picture <span className="text-slate-400 font-normal">(Optional)</span></label>
+            <label className="file-upload-custom hover:border-blue-600 hover:bg-blue-50" style={{
+              display: 'flex', alignItems: 'center', gap: '12px', border: `1.5px dashed ${errors.profilePicture ? '#ef4444' : '#cbd5e1'}`,
+              backgroundColor: errors.profilePicture ? '#fef2f2' : '#f8fafc', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer',
+              transition: 'all 0.2s ease', minHeight: '44px'
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px',
+                fontSize: '13px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)', flexShrink: 0
+              }}>
+                <CloudUpload size={16} />
+                Upload
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {formData.profilePicture ? formData.profilePicture.name : 'Select Image'}
+              </div>
+              <input 
+                type="file" 
+                accept="image/jpeg,image/png,image/jpg" 
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    if (!validTypes.includes(file.type)) {
+                      setErrors(prev => ({ ...prev, profilePicture: 'Only JPG or PNG files are allowed' }));
+                      return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                      setErrors(prev => ({ ...prev, profilePicture: 'File size must be less than 2MB' }));
+                      return;
+                    }
+                    setFormData(prev => ({ ...prev, profilePicture: file }));
+                    if (errors.profilePicture) {
+                      setErrors(prev => {
+                        const next = { ...prev };
+                        delete next.profilePicture;
+                        return next;
+                      });
+                    }
+                  }
+                }} 
+              />
+            </label>
+            {errors.profilePicture && <span className="form-error-text">{errors.profilePicture}</span>}
+          </div>
         </div>
       </div>
 
@@ -719,12 +765,52 @@ const MemberRegistration = () => {
 
         <div className="form-grid-2">
           <div className="form-group">
-            <label className="form-label">Aadhaar Card (Number) <span className="required">*</span></label>
-            <div className="input-with-icon">
-              <div className="input-icon-left"><CreditCard size={16} /></div>
-              <input type="text" maxLength={12} className={`form-input pl-10 ${errors.aadhaarNo ? 'error' : ''}`} placeholder="Enter 12 digit Aadhaar no." value={formData.aadhaarNo} onChange={(e) => handleTextChange('aadhaarNo', e.target.value)} />
-            </div>
-            {errors.aadhaarNo && <span className="form-error-text">{errors.aadhaarNo}</span>}
+            <label className="form-label">Aadhaar Document <span className="required">*</span></label>
+            <label className="file-upload-custom hover:border-blue-600 hover:bg-blue-50" style={{
+              display: 'flex', alignItems: 'center', gap: '12px', border: `1.5px dashed ${errors.aadhaarFile ? '#ef4444' : '#cbd5e1'}`,
+              backgroundColor: errors.aadhaarFile ? '#fef2f2' : '#f8fafc', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer',
+              transition: 'all 0.2s ease', minHeight: '44px'
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px',
+                fontSize: '13px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)', flexShrink: 0
+              }}>
+                <CloudUpload size={16} />
+                Upload
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {formData.aadhaarFile ? formData.aadhaarFile.name : 'Select PDF or Image'}
+              </div>
+              <input 
+                type="file" 
+                accept="image/jpeg,image/png,image/jpg,application/pdf" 
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+                    if (!validTypes.includes(file.type)) {
+                      setErrors(prev => ({ ...prev, aadhaarFile: 'Only PDF, JPG or PNG files are allowed' }));
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      setErrors(prev => ({ ...prev, aadhaarFile: 'File size must be less than 5MB' }));
+                      return;
+                    }
+                    setFormData(prev => ({ ...prev, aadhaarFile: file }));
+                    if (errors.aadhaarFile) {
+                      setErrors(prev => {
+                        const next = { ...prev };
+                        delete next.aadhaarFile;
+                        return next;
+                      });
+                    }
+                  }
+                }} 
+              />
+            </label>
+            {errors.aadhaarFile && <span className="form-error-text">{errors.aadhaarFile}</span>}
           </div>
 
           <div className="form-group">

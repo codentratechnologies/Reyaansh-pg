@@ -21,6 +21,7 @@ const EditMember = () => {
   const [formData, setFormData] = useState({
     memberId: '',
     fullName: '',
+    profilePicture: null,
     mobile: '',
     altMobile: '',
     email: '',
@@ -28,7 +29,7 @@ const EditMember = () => {
     dob: '',
     gender: '',
     company: '',
-    aadhaarNo: '',
+    aadhaarFile: null,
     panNo: '',
     dlNo: '',
     contactPerson: '',
@@ -84,7 +85,6 @@ const EditMember = () => {
             dob: mData.dob || '',
             gender: mData.gender || '',
             company: mData.company_college_name || '',
-            aadhaarNo: mData.aadhaar_number || '',
             panNo: mData.pan_number || '',
             dlNo: mData.driving_licence_number || '',
             contactPerson: mData.emergency_contact_name || '',
@@ -190,7 +190,6 @@ const EditMember = () => {
         dob: formData.dob,
         gender: formData.gender,
         company_college_name: formData.company,
-        aadhaar_number: formData.aadhaarNo,
         emergency_contact_name: formData.contactPerson,
         emergency_contact_relationship: formData.relationship,
         emergency_contact_number: formData.contactNumber,
@@ -426,6 +425,48 @@ const EditMember = () => {
               <input type="text" className="form-input pl-10" value={formData.company} onChange={(e) => handleTextChange('company', e.target.value)} />
             </div>
           </div>
+          
+          <div className="form-group">
+            <label className="form-label">Profile Picture <span className="text-slate-400 font-normal">(Optional)</span></label>
+            <label className="file-upload-custom hover:border-blue-600 hover:bg-blue-50" style={{
+              display: 'flex', alignItems: 'center', gap: '12px', border: '1.5px dashed #cbd5e1',
+              backgroundColor: '#f8fafc', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer',
+              transition: 'all 0.2s ease', minHeight: '44px'
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px',
+                fontSize: '13px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)', flexShrink: 0
+              }}>
+                <UploadCloud size={16} />
+                Upload
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {formData.profilePicture ? formData.profilePicture.name : 'Select Image'}
+              </div>
+              <input 
+                type="file" 
+                accept="image/jpeg,image/png,image/jpg" 
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    if (!validTypes.includes(file.type)) {
+                      setError('Only JPG or PNG files are allowed for Profile Picture');
+                      return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                      setError('Profile picture file size must be less than 2MB');
+                      return;
+                    }
+                    setError(null);
+                    setFormData(prev => ({ ...prev, profilePicture: file }));
+                  }
+                }} 
+              />
+            </label>
+          </div>
         </div>
       </div>
 
@@ -444,8 +485,45 @@ const EditMember = () => {
 
         <div className="form-grid-3">
           <div className="form-group">
-            <label className="form-label">Aadhaar Card (Number) <span className="required">*</span></label>
-            <input type="text" className="form-input" value={formData.aadhaarNo} onChange={(e) => handleTextChange('aadhaarNo', e.target.value)} />
+            <label className="form-label">Aadhaar Document</label>
+            <label className="file-upload-custom hover:border-blue-600 hover:bg-blue-50" style={{
+              display: 'flex', alignItems: 'center', gap: '12px', border: '1.5px dashed #cbd5e1',
+              backgroundColor: '#f8fafc', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer',
+              transition: 'all 0.2s ease', minHeight: '44px'
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px',
+                fontSize: '13px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)', flexShrink: 0
+              }}>
+                <UploadCloud size={16} />
+                Upload
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {formData.aadhaarFile ? formData.aadhaarFile.name : 'Select PDF or Image'}
+              </div>
+              <input 
+                type="file" 
+                accept="image/jpeg,image/png,image/jpg,application/pdf" 
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+                    if (!validTypes.includes(file.type)) {
+                      setError('Only PDF, JPG or PNG files are allowed for Aadhaar document');
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError('Aadhaar document file size must be less than 5MB');
+                      return;
+                    }
+                    setError(null);
+                    setFormData(prev => ({ ...prev, aadhaarFile: file }));
+                  }
+                }} 
+              />
+            </label>
           </div>
           <div className="form-group">
             <label className="form-label">PAN <span className="text-slate-400 font-normal">(Optional)</span></label>
