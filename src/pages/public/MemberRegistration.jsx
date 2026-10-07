@@ -427,6 +427,9 @@ const MemberRegistration = () => {
       if (formData.dlNo) payload.driving_licence_number = formData.dlNo;
       if (formData.addressLine2) payload.address_line_2 = formData.addressLine2;
       if (fcmToken) payload.fcm_token = fcmToken;
+      
+      if (formData.profilePicture) payload.member_img = formData.profilePicture;
+      if (formData.aadhaarFile) payload.aadhaar_card_img = formData.aadhaarFile;
 
       // Step 1: Save the member
       const memberRes = await api.post('/api/members', payload);

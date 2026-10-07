@@ -211,8 +211,8 @@ const Profile = () => {
             </div>
           </div>
           {!isEditing && !isLoading && (
-            <button className="pf-edit-btn" onClick={handleEdit}>
-              <Edit3 size={14} /> Edit Profile
+            <button className="pf-edit-btn" onClick={handleEdit} title="Edit Profile">
+              <Edit3 size={14} /> <span className="pf-edit-btn-text">Edit Profile</span>
             </button>
           )}
         </div>

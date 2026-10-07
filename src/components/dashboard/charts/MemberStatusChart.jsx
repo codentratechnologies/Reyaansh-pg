@@ -44,8 +44,8 @@ const MemberStatusChart = ({ data }) => {
             <div className="legend-item" key={index} style={{ marginBottom: '8px' }}>
               <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
               <div className="legend-text" style={{ display: 'flex', flexDirection: 'column' }}>
-                <div className="legend-name" style={{ fontSize: '11px', color: '#475569' }}>{item.name}</div>
-                <div className="legend-val" style={{ fontSize: '11px', fontWeight: '600' }}>
+                <div className="legend-name" style={{ color: '#475569' }}>{item.name}</div>
+                <div className="legend-val" style={{ fontWeight: '600' }}>
                   {item.value} ({item.percentage}%)
                 </div>
               </div>

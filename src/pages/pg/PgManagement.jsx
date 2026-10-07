@@ -189,8 +189,12 @@ const PgManagement = () => {
             <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate('/pg-management/add')} title="Add New PG">
               <span className="hide-on-mobile">Add New PG</span>
             </Button>
-            <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)}>Filter</Button>
-            <Button variant="outline" icon={<RotateCcw size={16} />} onClick={() => { setSearchTerm(''); fetchPgs(1, ''); }}>Reset</Button>
+            <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)} title="Filter">
+              <span className="hide-on-mobile">Filter</span>
+            </Button>
+            <Button variant="outline" icon={<RotateCcw size={16} />} onClick={() => { setSearchTerm(''); fetchPgs(1, ''); }} title="Reset">
+              <span className="hide-on-mobile">Reset</span>
+            </Button>
           </div>
         </div>
 

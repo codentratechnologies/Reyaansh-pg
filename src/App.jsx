@@ -18,6 +18,7 @@ import ViewMember from './pages/members/ViewMember';
 import EditMember from './pages/members/EditMember';
 import Checkout from './pages/checkout/Checkout';
 import Profile from './pages/profile/Profile';
+import Expense from './pages/expense/Expense';
 
 import { AuthProvider } from './context/AuthContext';
 
@@ -43,6 +44,7 @@ function App() {
         <Route path="/register" element={<MemberRegistration />} />
         <Route path="/member-management/view/:id" element={<ProtectedRoute><DashboardLayout><ViewMember /></DashboardLayout></ProtectedRoute>} />
         <Route path="/member-management/edit/:id" element={<ProtectedRoute><DashboardLayout><EditMember /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/expense" element={<ProtectedRoute><DashboardLayout><Expense /></DashboardLayout></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>} />
       </Routes>
     </Router>

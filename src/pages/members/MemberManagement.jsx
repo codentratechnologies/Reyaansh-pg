@@ -243,8 +243,8 @@ const MemberManagement = () => {
               <span className="hide-on-mobile">Upload Bank Statement</span>
             </Button>
 
-            <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)} style={{ position: 'relative' }}>
-              Filters
+            <Button variant="outline" icon={<Filter size={16} />} onClick={() => setIsFilterModalOpen(true)} style={{ position: 'relative' }} title="Filters">
+              <span className="hide-on-mobile">Filters</span>
               {Object.values(activeFilters).some(v => v !== '') && (
                 <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#3b82f6', width: '8px', height: '8px', borderRadius: '50%' }}></span>
               )}

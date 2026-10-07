@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../common/ConfirmModal';
-import { LayoutDashboard, Building2, Users, Headphones, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Headphones, LogOut, X, Wallet } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const navigate = useNavigate();
@@ -49,6 +49,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <NavLink to="/member-management" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={() => setIsOpen(false)}>
                 <Users size={20} />
                 <span>Member Management</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/expense" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'} onClick={() => setIsOpen(false)}>
+                <Wallet size={20} />
+                <span>Expense</span>
               </NavLink>
             </li>
           </ul>

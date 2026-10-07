@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Menu, LayoutDashboard, Building2, Users, User, 
-  CreditCard, PlusCircle, Edit, Eye 
+  CreditCard, PlusCircle, Edit, Eye, Wallet 
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -30,6 +30,7 @@ const Header = ({ setIsSidebarOpen }) => {
     
     if (path.startsWith('/profile')) return { title: 'Admin Profile', Icon: User };
     if (path.startsWith('/checkout')) return { title: 'Checkout', Icon: CreditCard };
+    if (path.startsWith('/expense')) return { title: 'Expenses', Icon: Wallet };
     
     return { title: 'Dashboard', Icon: LayoutDashboard };
   };

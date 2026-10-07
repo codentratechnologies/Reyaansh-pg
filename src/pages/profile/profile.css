@@ -82,7 +82,7 @@
   border-top: 1px solid #fecaca;
   border-bottom: 1px solid #fecaca;
   padding: 11px 28px;
-  font-size: 13.5px;
+  font-size: 15.5px;
   font-weight: 500;
   color: #dc2626;
 }
@@ -158,7 +158,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 800;
   color: white;
   letter-spacing: -1px;
@@ -183,7 +183,7 @@
 }
 
 .profile-name {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   color: white;
   margin: 0 0 10px;
@@ -204,7 +204,7 @@
   gap: 5px;
   background: rgba(255,255,255,0.15);
   color: rgba(255,255,255,0.95);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
@@ -217,7 +217,7 @@
   gap: 4px;
   background: rgba(16, 185, 129, 0.2);
   color: #6ee7b7;
-  font-size: 11.5px;
+  font-size: 13.5px;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 20px;
@@ -237,7 +237,7 @@
   gap: 5px;
   background: rgba(255,255,255,0.1);
   color: rgba(255,255,255,0.82);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   padding: 5px 12px;
   border-radius: 20px;
@@ -268,14 +268,14 @@
 }
 
 .profile-stat-value {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   color: white;
   line-height: 1;
 }
 
 .profile-stat-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: rgba(255,255,255,0.6);
   white-space: nowrap;
@@ -341,14 +341,14 @@
 }
 
 .profile-panel-title {
-  font-size: 15.5px;
+  font-size: 17.5px;
   font-weight: 700;
   color: #0f172a;
   margin: 0 0 3px;
 }
 
 .profile-panel-desc {
-  font-size: 12.5px;
+  font-size: 14.5px;
   color: #64748b;
   margin: 0;
 }
@@ -379,7 +379,7 @@
   border: 1.5px solid #bfdbfe;
   background: #eff6ff;
   color: #1d4ed8;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
@@ -409,7 +409,7 @@
 }
 
 .pf-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #64748b;
   letter-spacing: 0.3px;
@@ -422,7 +422,7 @@
   display: flex;
   align-items: center;
   padding: 0 16px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #0f172a;
   background: #f8fafc;
@@ -467,7 +467,7 @@
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   padding: 0 16px;
-  font-size: 14px;
+  font-size: 16px;
   color: #0f172a;
   background: white;
   font-family: 'Inter', sans-serif;
@@ -498,7 +498,7 @@
   border: 1.5px solid #e2e8f0;
   background: white;
   color: #64748b;
-  font-size: 13.5px;
+  font-size: 15.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
@@ -515,7 +515,7 @@
   border: none;
   background: linear-gradient(135deg, #1d4ed8, #2563eb);
   color: white;
-  font-size: 13.5px;
+  font-size: 15.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
@@ -537,7 +537,7 @@
   border: 1.5px solid #fecaca;
   background: #fff5f5;
   color: #dc2626;
-  font-size: 13.5px;
+  font-size: 15.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
@@ -555,7 +555,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 13.5px;
+  font-size: 15.5px;
   font-weight: 600;
   color: #059669;
   animation: fadeSlideIn 0.35s ease;
@@ -588,7 +588,7 @@
 .pg-info-item:nth-last-child(-n+3) { border-bottom: none; }
 
 .pg-info-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #94a3b8;
   text-transform: uppercase;
@@ -596,7 +596,7 @@
 }
 
 .pg-info-value {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   color: #0f172a;
 }
@@ -620,4 +620,7 @@
   .profile-pg-info-grid { grid-template-columns: 1fr; }
   .pg-info-item:nth-child(3n) { border-right: none; }
   .pg-info-item { border-right: none; }
+
+  .pf-edit-btn-text { display: none; }
+  .pf-edit-btn { padding: 9px 10px; border-radius: 8px; }
 }

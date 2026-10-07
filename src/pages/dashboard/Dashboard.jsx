@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Building2, BedDouble, Users, PieChart, Wallet, Receipt } from 'lucide-react';
+import { Filter, Building2, BedDouble, Users, AlertCircle, Wallet, Receipt, TrendingUp, TrendingDown } from 'lucide-react';
 import StatCard from '../../components/dashboard/StatCard';
 import api from '../../utils/api';
 
@@ -16,7 +16,8 @@ import DashboardFiltersModal from '../../components/dashboard/DashboardFiltersMo
 
 const formatCurrency = (val) => {
   if (!val) return '₹0';
-  if (val >= 1000000) return `₹${(val / 1000000).toFixed(2)}M`;
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
   if (val >= 1000) return `₹${(val / 1000).toFixed(1)}K`;
   return `₹${val}`;
 };
@@ -63,8 +64,12 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-page">
-      {/* Top Action Bar */}
-      <div className="dashboard-top-bar" style={{ justifyContent: 'flex-end' }}>
+      {/* Top Action Bar & KPI Header */}
+      <div className="dashboard-top-bar" style={{ marginBottom: '16px' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Key Performance Indicators</h2>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Quick overview of your properties and financials</p>
+        </div>
         <div className="top-actions">
           <button className="action-btn filter-btn" onClick={() => setIsFilterModalOpen(true)} title="Filter" style={{ position: 'relative' }}>
             <Filter size={16} color="#1a56db" />
@@ -83,20 +88,12 @@ const Dashboard = () => {
           iconBg="#eff6ff"
           title="Total PGs"
           value={isLoading ? "..." : kpiData?.total_pgs?.value || "0"}
-          subtext={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#16a34a' }}>{kpiData?.total_pgs?.active || 0} Active</span>
-              <span style={{ color: '#94a3b8' }}>•</span>
-              <span style={{ color: '#dc2626' }}>{kpiData?.total_pgs?.inactive || 0} Inactive</span>
-            </div>
-          }
         />
         <StatCard 
           icon={<BedDouble size={22} color="#1a56db" />}
           iconBg="#eff6ff"
           title="Total Rooms"
           value={isLoading ? "..." : kpiData?.total_rooms || "0"}
-          subtext={<span style={{ color: '#64748b' }}>Total Rooms</span>}
         />
         <StatCard 
           icon={<Users size={22} color="#16a34a" />}
@@ -104,30 +101,13 @@ const Dashboard = () => {
           title="Total Members"
           value={isLoading ? "..." : kpiData?.total_members?.value || "0"}
           accentClass="accent-green"
-          subtext={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#16a34a' }}>{kpiData?.total_members?.active || 0} Active</span>
-              <span style={{ color: '#94a3b8' }}>•</span>
-              <span style={{ color: '#ea580c' }}>{kpiData?.total_members?.notice || 0} Notice</span>
-            </div>
-          }
         />
         <StatCard 
-          icon={<PieChart size={22} color="#7c3aed" />}
-          iconBg="#f3e8ff"
-          title="Occupancy Rate"
-          value={isLoading ? "..." : `${kpiData?.occupancy_rate?.percentage || 0}%`}
-          accentClass="accent-purple"
-          subtext={
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ color: '#64748b' }}>{kpiData?.occupancy_rate?.occupied || 0} Occupied Beds</span>
-              {kpiData?.occupancy_rate?.trend && (
-                <span style={{ color: kpiData.occupancy_rate.trend.startsWith('+') ? '#16a34a' : '#dc2626' }}>
-                  {kpiData.occupancy_rate.trend} vs Last Month
-                </span>
-              )}
-            </div>
-          }
+          icon={<AlertCircle size={22} color="#dc2626" />}
+          iconBg="#fef2f2"
+          title="Total Overdue Rent"
+          value={isLoading ? "..." : "₹45,000"}
+          accentClass="accent-red"
         />
         <StatCard 
           icon={<Wallet size={22} color="#16a34a" />}
@@ -135,16 +115,6 @@ const Dashboard = () => {
           title="Rent Collected"
           value={isLoading ? "..." : formatCurrency(kpiData?.rent_collected?.amount)}
           accentClass="accent-green"
-          subtext={
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ color: '#64748b' }}>This Month</span>
-              {kpiData?.rent_collected?.trend && (
-                <span style={{ color: kpiData.rent_collected.trend.startsWith('+') ? '#16a34a' : '#dc2626' }}>
-                  {kpiData.rent_collected.trend} vs Last Month
-                </span>
-              )}
-            </div>
-          }
         />
         <StatCard 
           icon={<Receipt size={22} color="#ea580c" />}
@@ -152,17 +122,27 @@ const Dashboard = () => {
           title="Pending Rent"
           value={isLoading ? "..." : formatCurrency(kpiData?.pending_rent?.amount)}
           accentClass="accent-orange"
-          subtext={
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
-              <span style={{ color: '#64748b' }}>From {kpiData?.pending_rent?.members || 0} Members</span>
-              {kpiData?.pending_rent?.trend && (
-                <span style={{ color: kpiData.pending_rent.trend.startsWith('+') ? '#dc2626' : '#16a34a' }}>
-                  {kpiData.pending_rent.trend} vs Last Month
-                </span>
-              )}
-            </div>
-          }
         />
+        <StatCard 
+          icon={<TrendingUp size={22} color="#16a34a" />}
+          iconBg="#f0fdf4"
+          title="Total Profit"
+          value={isLoading ? "..." : "₹85,000"}
+          accentClass="accent-green"
+        />
+        <StatCard 
+          icon={<TrendingDown size={22} color="#dc2626" />}
+          iconBg="#fef2f2"
+          title="Total Expense"
+          value={isLoading ? "..." : "₹35,000"}
+          accentClass="accent-red"
+        />
+      </div>
+
+      {/* Analytics Charts Section Header */}
+      <div style={{ marginBottom: '16px', marginTop: '32px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Analytics & Trends</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Visual breakdowns of occupancy and revenue</p>
       </div>
 
       {/* Charts Row */}
@@ -173,11 +153,23 @@ const Dashboard = () => {
         <RevenueByPGChart data={chartData?.revenue_by_pg} />
       </div>
 
+      {/* Data Tables Section Header */}
+      <div style={{ marginBottom: '16px', marginTop: '32px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Recent Activity & Dues</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Upcoming rent and latest payment transactions</p>
+      </div>
+
       {/* Tables Row */}
       {/* Standard Tables Row */}
       <div className="tables-grid">
         <RentDueTable data={tablesData?.upcoming_rent_due} />
         <RecentPaymentsTable data={tablesData?.recent_payments} />
+      </div>
+
+      {/* Alerts Section Header */}
+      <div style={{ marginBottom: '16px', marginTop: '32px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Actionable Alerts</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Critical items requiring your immediate attention</p>
       </div>
 
       {/* Alert Tables Row */}
