@@ -23,7 +23,7 @@ const RevenueByPGChart = ({ data }) => {
   return (
     <div className="chart-card">
       <div className="chart-header">
-        <h3 className="chart-title">Revenue by PG</h3>
+        <h3 className="chart-title">Income by Building</h3>
       </div>
       <div className="chart-body" style={{ height: '220px', marginTop: '16px' }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -38,7 +38,7 @@ const RevenueByPGChart = ({ data }) => {
             />
             <YAxis type="number" hide />
             <Tooltip 
-              cursor={{ fill: '#f1f5f9' }}
+              cursor={false}
               formatter={(value) => [value >= 100000 ? `₹${(value/100000).toFixed(2)}L` : `₹${(value/1000).toFixed(0)}K`, 'Revenue']}
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '8px 12px' }}
               itemStyle={{ color: '#1a56db', fontWeight: 700 }}

@@ -11,7 +11,7 @@ const RentOverdueAlert = ({ data = [] }) => {
   return (
     <div className="table-card" style={{ borderColor: '#fecaca', background: '#fff5f5' }}>
       <div className="table-header">
-        <h3 className="table-title" style={{ color: '#dc2626' }}>Alert: Rent Overdue</h3>
+        <h3 className="table-title" style={{ color: '#dc2626' }}>Late Rent</h3>
       </div>
       <div className="table-container">
         <table className="list-table">

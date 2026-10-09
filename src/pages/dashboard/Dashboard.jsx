@@ -67,8 +67,8 @@ const Dashboard = () => {
       {/* Top Action Bar & KPI Header */}
       <div className="dashboard-top-bar" style={{ marginBottom: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Key Performance Indicators</h2>
-          <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Quick overview of your properties and financials</p>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Quick Summary</h2>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>A fast look at your properties and money</p>
         </div>
         <div className="top-actions">
           <button className="action-btn filter-btn" onClick={() => setIsFilterModalOpen(true)} title="Filter" style={{ position: 'relative' }}>
@@ -106,7 +106,7 @@ const Dashboard = () => {
           icon={<AlertCircle size={22} color="#dc2626" />}
           iconBg="#fef2f2"
           title="Total Overdue Rent"
-          value={isLoading ? "..." : "₹45,000"}
+          value={isLoading ? "..." : "₹0"}
           accentClass="accent-red"
         />
         <StatCard 
@@ -127,22 +127,22 @@ const Dashboard = () => {
           icon={<TrendingUp size={22} color="#16a34a" />}
           iconBg="#f0fdf4"
           title="Total Profit"
-          value={isLoading ? "..." : "₹85,000"}
+          value={isLoading ? "..." : "₹0"}
           accentClass="accent-green"
         />
         <StatCard 
           icon={<TrendingDown size={22} color="#dc2626" />}
           iconBg="#fef2f2"
           title="Total Expense"
-          value={isLoading ? "..." : "₹35,000"}
+          value={isLoading ? "..." : "₹0"}
           accentClass="accent-red"
         />
       </div>
 
       {/* Analytics Charts Section Header */}
       <div style={{ marginBottom: '16px', marginTop: '32px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Analytics & Trends</h2>
-        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Visual breakdowns of occupancy and revenue</p>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Charts</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Visual look at beds and income</p>
       </div>
 
       {/* Charts Row */}
@@ -155,8 +155,8 @@ const Dashboard = () => {
 
       {/* Data Tables Section Header */}
       <div style={{ marginBottom: '16px', marginTop: '32px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Recent Activity & Dues</h2>
-        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Upcoming rent and latest payment transactions</p>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Recent Payments & Dues</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Who needs to pay and recent payments</p>
       </div>
 
       {/* Tables Row */}
@@ -168,8 +168,8 @@ const Dashboard = () => {
 
       {/* Alerts Section Header */}
       <div style={{ marginBottom: '16px', marginTop: '32px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Actionable Alerts</h2>
-        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Critical items requiring your immediate attention</p>
+        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>Needs Attention</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>Important things you need to look at right now</p>
       </div>
 
       {/* Alert Tables Row */}

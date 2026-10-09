@@ -12,7 +12,7 @@ const MemberStatusChart = ({ data }) => {
   return (
     <div className="chart-card">
       <div className="chart-header">
-        <h3 className="chart-title">Member Status Distribution</h3>
+        <h3 className="chart-title">Member Status</h3>
       </div>
       <div className="chart-body" style={{ display: 'flex', alignItems: 'center', marginTop: '16px', justifyContent: 'center', gap: '32px' }}>
         <div style={{ width: '160px', height: '160px' }}>
@@ -46,7 +46,7 @@ const MemberStatusChart = ({ data }) => {
               <div className="legend-text" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="legend-name" style={{ color: '#475569' }}>{item.name}</div>
                 <div className="legend-val" style={{ fontWeight: '600' }}>
-                  {item.value} ({item.percentage}%)
+                  {item.value}
                 </div>
               </div>
             </div>

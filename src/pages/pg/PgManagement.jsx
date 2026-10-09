@@ -221,15 +221,55 @@ const PgManagement = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan="8" className="text-center py-8" style={{ color: '#64748b' }}>Loading properties...</td>
-                </tr>
+                [...Array(10)].map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="skeleton-row">
+                    <td><div className="skeleton-box" style={{ width: '40px' }}></div></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="skeleton-avatar"></div>
+                        <div className="skeleton-box" style={{ width: '120px' }}></div>
+                      </div>
+                    </td>
+                    <td><div className="skeleton-box" style={{ width: '60px', margin: '0 auto' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '80px' }}></div></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="skeleton-avatar" style={{ width: '28px', height: '28px' }}></div>
+                        <div className="skeleton-box" style={{ width: '100px' }}></div>
+                      </div>
+                    </td>
+                    <td><div className="skeleton-box" style={{ width: '90px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '70px', margin: '0 auto', borderRadius: '12px' }}></div></td>
+                    <td>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : pgList.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="text-center py-8" style={{ color: '#64748b' }}>No properties found.</td>
-                </tr>
+                <>
+                  <tr>
+                    <td colSpan="8" className="text-center py-8" style={{ color: '#64748b' }}>No properties found.</td>
+                  </tr>
+                  {[...Array(9)].map((_, i) => (
+                    <tr key={`empty-empty-${i}`}>
+                      <td colSpan="8">&nbsp;</td>
+                    </tr>
+                  ))}
+                </>
               ) : (
-                sortedPgList.map((pg, index) => {
+                [...sortedPgList, ...Array(Math.max(0, 10 - sortedPgList.length)).fill(null)].map((pg, index) => {
+                  if (!pg) {
+                    return (
+                      <tr key={`empty-row-${index}`}>
+                        <td colSpan="8">&nbsp;</td>
+                      </tr>
+                    );
+                  }
+
                   const initial = pg.contact_person ? pg.contact_person.charAt(0).toUpperCase() : 'U';
                   const isPg = pg.pg_type === 'PG';
                   const isActive = pg.status && pg.status.toLowerCase() === 'active';

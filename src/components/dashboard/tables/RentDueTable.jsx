@@ -11,7 +11,7 @@ const RentDueTable = ({ data = [] }) => {
   return (
     <div className="table-card">
       <div className="table-header">
-        <h3 className="table-title">Upcoming Rent Due</h3>
+        <h3 className="table-title">Rent Due Soon</h3>
       </div>
       <div className="table-container">
         <table className="list-table">

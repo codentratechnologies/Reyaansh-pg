@@ -11,7 +11,7 @@ const OccupancyChart = ({ data }) => {
   return (
     <div className="chart-card">
       <div className="chart-header">
-        <h3 className="chart-title">Occupancy Overview</h3>
+        <h3 className="chart-title">Bed Availability</h3>
       </div>
       <div className="chart-body" style={{ display: 'flex', alignItems: 'center', marginTop: '16px', justifyContent: 'center', gap: '32px' }}>
         <div style={{ width: '160px', height: '160px', position: 'relative' }}>
@@ -44,14 +44,14 @@ const OccupancyChart = ({ data }) => {
             <span className="legend-dot" style={{ backgroundColor: '#1a56db' }}></span>
             <div className="legend-text">
               <div className="legend-name">Occupied Beds</div>
-              <div className="legend-val">{chartData[0].value} ({chartData[0].percentage}%)</div>
+              <div className="legend-val">{chartData[0].value}</div>
             </div>
           </div>
           <div className="legend-item">
             <span className="legend-dot" style={{ backgroundColor: '#e2e8f0' }}></span>
             <div className="legend-text">
               <div className="legend-name">Vacant Beds</div>
-              <div className="legend-val">{chartData[1].value} ({chartData[1].percentage}%)</div>
+              <div className="legend-val">{chartData[1].value}</div>
             </div>
           </div>
         </div>

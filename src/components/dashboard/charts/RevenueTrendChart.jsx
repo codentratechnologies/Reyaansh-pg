@@ -6,7 +6,7 @@ const RevenueTrendChart = ({ data }) => {
   return (
     <div className="chart-card">
       <div className="chart-header">
-        <h3 className="chart-title">Monthly Rent Collection Trend</h3>
+        <h3 className="chart-title">Monthly Rent Collected</h3>
       </div>
       <div className="chart-body" style={{ height: '180px', marginTop: '16px' }}>
         <ResponsiveContainer width="100%" height="100%">

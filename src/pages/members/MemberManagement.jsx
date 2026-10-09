@@ -278,15 +278,54 @@ const MemberManagement = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan="11" className="text-center py-8" style={{ color: '#64748b' }}>Loading members...</td>
-                </tr>
+                [...Array(10)].map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="skeleton-row">
+                    <td><div className="skeleton-box" style={{ width: '30px' }}></div></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="skeleton-avatar" style={{ width: '36px', height: '36px' }}></div>
+                        <div className="skeleton-box" style={{ width: '100px' }}></div>
+                      </div>
+                    </td>
+                    <td><div className="skeleton-box" style={{ width: '80px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '80px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '40px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '50px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '70px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '80px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '60px', margin: '0 auto', borderRadius: '12px' }}></div></td>
+                    <td><div className="skeleton-box" style={{ width: '60px', margin: '0 auto', borderRadius: '12px' }}></div></td>
+                    <td>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                        <div className="skeleton-avatar" style={{ width: '24px', height: '24px' }}></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : membersList.length === 0 ? (
-                <tr>
-                  <td colSpan="11" className="text-center py-8" style={{ color: '#64748b' }}>No members found.</td>
-                </tr>
+                <>
+                  <tr>
+                    <td colSpan="11" className="text-center py-8" style={{ color: '#64748b' }}>No members found.</td>
+                  </tr>
+                  {[...Array(9)].map((_, i) => (
+                    <tr key={`empty-empty-${i}`}>
+                      <td colSpan="11">&nbsp;</td>
+                    </tr>
+                  ))}
+                </>
               ) : (
-                sortedMembersList.map((member, index) => {
+                [...sortedMembersList, ...Array(Math.max(0, 10 - sortedMembersList.length)).fill(null)].map((member, index) => {
+                  if (!member) {
+                    return (
+                      <tr key={`empty-row-${index}`}>
+                        <td colSpan="11">&nbsp;</td>
+                      </tr>
+                    );
+                  }
+
                   const theme = getTheme(member.name);
                   const initials = getInitials(member.name);
                   const rentStatus = member.rent_status || 'Pending';

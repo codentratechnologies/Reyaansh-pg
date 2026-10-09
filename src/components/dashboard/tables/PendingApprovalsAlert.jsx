@@ -17,7 +17,7 @@ const PendingApprovalsAlert = ({ data = [] }) => {
   return (
     <div className="table-card" style={{ borderColor: '#fed7aa', background: '#fff7ed' }}>
       <div className="table-header">
-        <h3 className="table-title" style={{ color: '#ea580c' }}>Alert: Pending Approvals</h3>
+        <h3 className="table-title" style={{ color: '#ea580c' }}>Payments to Verify</h3>
       </div>
       <div className="table-container">
         <table className="list-table">
