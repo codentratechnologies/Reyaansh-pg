@@ -10,6 +10,7 @@ import {
 import Button from '../../components/common/Button';
 import CustomSelect from '../../components/common/CustomSelect';
 import CustomDatePicker from '../../components/common/CustomDatePicker';
+import AadhaarUploadWithOcr from '../../components/common/AadhaarUploadWithOcr';
 import '../../assets/dashboard.css';
 
 import api from '../../utils/api';
@@ -20,6 +21,7 @@ const MemberRegistration = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [aadhaarOcrResult, setAadhaarOcrResult] = useState(null);
   
   // Availability Data
   const [availabilityData, setAvailabilityData] = useState([]);
@@ -290,6 +292,8 @@ const MemberRegistration = () => {
 
     if (!formData.aadhaarFile) {
       newErrors.aadhaarFile = 'Aadhaar Document is required';
+    } else if (aadhaarOcrResult && !aadhaarOcrResult.isValid) {
+      newErrors.aadhaarFile = aadhaarOcrResult.rejectionReason || 'Uploaded document does not meet the Aadhaar verification criteria (minimum 50% match, front side compulsory).';
     }
 
     if (formData.panNo && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNo)) {
@@ -617,14 +621,14 @@ const MemberRegistration = () => {
   }
 
   return (
-    <div style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
+    <div style={{ height: '100vh', overflowY: 'auto', overflowX: 'hidden', width: '100%', maxWidth: '100vw', boxSizing: 'border-box', backgroundColor: '#f8fafc' }}>
       {/* Simple standalone header */}
       <header className="member-reg-header" style={{ backgroundColor: '#ffffff', padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 10 }}>
         <h1 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', fontWeight: '600' }}>Reyaansh PG - Member Registration</h1>
       </header>
 
-      <main className="member-reg-main" style={{ padding: '24px' }}>
-        <div className="page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
+      <main className="member-reg-main" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div className="page-container" style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', padding: 0, boxSizing: 'border-box' }}>
       {/* 1. Personal Information */}
       <div className="form-section-card theme-blue">
         <div className="form-section-header">
@@ -767,53 +771,59 @@ const MemberRegistration = () => {
         </div>
 
         <div className="form-grid-2">
-          <div className="form-group">
-            <label className="form-label">Aadhaar Document <span className="required">*</span></label>
-            <label className="file-upload-custom hover:border-blue-600 hover:bg-blue-50" style={{
-              display: 'flex', alignItems: 'center', gap: '12px', border: `1.5px dashed ${errors.aadhaarFile ? '#ef4444' : '#cbd5e1'}`,
-              backgroundColor: errors.aadhaarFile ? '#fef2f2' : '#f8fafc', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer',
-              transition: 'all 0.2s ease', minHeight: '44px'
-            }}>
-              <div style={{
-                backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px',
-                fontSize: '13px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)', flexShrink: 0
-              }}>
-                <CloudUpload size={16} />
-                Upload
-              </div>
-              <div style={{ fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {formData.aadhaarFile ? formData.aadhaarFile.name : 'Select PDF or Image'}
-              </div>
-              <input 
-                type="file" 
-                accept="image/jpeg,image/png,image/jpg,application/pdf" 
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-                    if (!validTypes.includes(file.type)) {
-                      setErrors(prev => ({ ...prev, aadhaarFile: 'Only PDF, JPG or PNG files are allowed' }));
-                      return;
-                    }
-                    if (file.size > 5 * 1024 * 1024) {
-                      setErrors(prev => ({ ...prev, aadhaarFile: 'File size must be less than 5MB' }));
-                      return;
-                    }
-                    setFormData(prev => ({ ...prev, aadhaarFile: file }));
-                    if (errors.aadhaarFile) {
-                      setErrors(prev => {
-                        const next = { ...prev };
-                        delete next.aadhaarFile;
-                        return next;
-                      });
-                    }
-                  }
-                }} 
-              />
+          <div className="form-group" style={{ gridColumn: '1 / -1', minWidth: 0, maxWidth: '100%' }}>
+            <label className="form-label" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+              <span>
+                Aadhaar Document <span className="required">*</span>
+              </span>
+              <span style={{ fontSize: '11.5px', fontWeight: 'normal', color: '#64748b', lineHeight: '1.3' }}>
+                (Front side compulsory, min. 50% match verified by OCR)
+              </span>
             </label>
-            {errors.aadhaarFile && <span className="form-error-text">{errors.aadhaarFile}</span>}
+            <AadhaarUploadWithOcr
+              value={formData.aadhaarFile}
+              onChange={(file, result, errorMsg) => {
+                setFormData(prev => ({ ...prev, aadhaarFile: file }));
+                setAadhaarOcrResult(result);
+                if (errorMsg) {
+                  setErrors(prev => ({ ...prev, aadhaarFile: errorMsg }));
+                } else if (errors.aadhaarFile) {
+                  setErrors(prev => {
+                    const next = { ...prev };
+                    delete next.aadhaarFile;
+                    return next;
+                  });
+                }
+              }}
+              error={errors.aadhaarFile}
+              onClearError={() => {
+                if (errors.aadhaarFile) {
+                  setErrors(prev => {
+                    const next = { ...prev };
+                    delete next.aadhaarFile;
+                    return next;
+                  });
+                }
+              }}
+              onAutoFill={(extracted) => {
+                setFormData(prev => {
+                  const updated = { ...prev };
+                  if (extracted.dob && !prev.dob) updated.dob = extracted.dob;
+                  if (extracted.gender && !prev.gender) updated.gender = extracted.gender;
+                  if (extracted.pincode && !prev.pincode) updated.pincode = extracted.pincode;
+                  return updated;
+                });
+                setErrors(prev => {
+                  const next = { ...prev };
+                  if (extracted.dob) delete next.dob;
+                  if (extracted.gender) delete next.gender;
+                  if (extracted.pincode) delete next.pincode;
+                  return next;
+                });
+              }}
+              currentDob={formData.dob}
+              currentGender={formData.gender}
+            />
           </div>
 
           <div className="form-group">
